@@ -30,13 +30,19 @@ XGBOOST_LAYER = "http://xgboost-layer:8020"
 LLM_LAYER = "http://llm-layer:8030"
 
 class TrainRequest(BaseModel):
-    name: str  # Required, user-provided, unique
+    name: str
     description: Optional[str] = None
     training_data: List[Dict[str, str]]
     layers: Optional[List[str]] = ["tags", "xgboost", "llm"]
     tags_config: Optional[Dict] = None
     xgboost_config: Optional[Dict] = None
     llm_config: Optional[Dict] = None
+    hil_config: Optional[Dict] = {
+        "enabled": True,
+        "tags_threshold": 0.7,
+        "xgboost_threshold": 0.7,
+        "llm_threshold": 0.8
+    }
     fallback_category: Optional[str] = None
 
 class ClassifyRequest(BaseModel):
@@ -235,7 +241,7 @@ async def classify(request: ClassifyRequest, db: Session = Depends(get_db)):
     
     # Run classification
     if request.strategy == "cascade":
-        result = await classify_cascade(request.categorizer_id, request.text)
+        result = await classify_cascade(request.categorizer_id, request.text, db)
     elif request.strategy == "all":
         result = await classify_all(request.categorizer_id, request.text)
     elif request.strategy == "fastest":
@@ -263,9 +269,22 @@ async def classify(request: ClassifyRequest, db: Session = Depends(get_db)):
     
     return ClassifyResponse(**result)
 
-async def classify_cascade(categorizer_id: str, text: str) -> Dict:
-    """Cascade strategy: Tags → XGBoost → LLM"""
+async def classify_cascade(categorizer_id: str, text: str, db: Session) -> Dict:
+    """Cascade strategy: Tags → XGBoost → LLM → HIL"""
     cascade_results = {}
+    
+    # Get categorizer config for HIL thresholds
+    categorizer = db.query(Categorizer).filter(
+        (Categorizer.categorizer_id == categorizer_id) |
+        (Categorizer.name == categorizer_id)
+    ).first()
+    
+    # Default HIL thresholds (can be overridden in categorizer.config)
+    hil_config = categorizer.config.get('hil_config', {}) if categorizer and categorizer.config else {}
+    tags_threshold = hil_config.get('tags_threshold', 0.7)
+    xgboost_threshold = hil_config.get('xgboost_threshold', 0.7)
+    llm_threshold = hil_config.get('llm_threshold', 0.8)
+    hil_enabled = hil_config.get('enabled', True)
     
     async with httpx.AsyncClient() as client:
         # Layer 1: Tags
@@ -322,9 +341,56 @@ async def classify_cascade(categorizer_id: str, text: str) -> Dict:
             llm_result = response.json()
             cascade_results["llm"] = llm_result
             
+            llm_confidence = llm_result.get("confidence", 0.5)
+            
+            # Check if we should escalate to HIL
+            tags_conf = cascade_results.get("tags", {}).get("confidence", 0)
+            xgb_conf = cascade_results.get("xgboost", {}).get("confidence", 0)
+            
+            should_escalate_to_hil = hil_enabled and all([
+                tags_conf < tags_threshold,
+                xgb_conf < xgboost_threshold,
+                llm_confidence < llm_threshold
+            ])
+            
+            if should_escalate_to_hil:
+                # Layer 4: HIL Escalation
+                try:
+                    hil_response = await client.post(
+                        "http://hil-layer:8040/escalate",
+                        json={
+                            "categorizer_id": categorizer_id,
+                            "text": text,
+                            "suggested_category": llm_result.get("category"),
+                            "suggested_confidence": llm_confidence,
+                            "context": {
+                                "tags": cascade_results.get("tags"),
+                                "xgboost": cascade_results.get("xgboost"),
+                                "llm": llm_result
+                            }
+                        },
+                        timeout=5.0
+                    )
+                    hil_result = hil_response.json()
+                    cascade_results["hil"] = hil_result
+                    
+                    return {
+                        "category": None,
+                        "confidence": 0.0,
+                        "method": "hil_pending",
+                        "reasoning": f"Low confidence across all layers - escalated to human review (Review ID: {hil_result.get('review_id')})",
+                        "cascade_results": cascade_results,
+                        "is_fallback": False,
+                        "hil_review_id": hil_result.get("review_id"),
+                        "queue_position": hil_result.get("queue_position")
+                    }
+                except Exception as e:
+                    cascade_results["hil"] = {"error": str(e)}
+            
+            # Return LLM result if HIL disabled or escalation failed
             return {
                 "category": llm_result.get("category"),
-                "confidence": llm_result.get("confidence", 0.5),
+                "confidence": llm_confidence,
                 "method": "llm",
                 "reasoning": llm_result.get("reasoning", ""),
                 "cascade_results": cascade_results,

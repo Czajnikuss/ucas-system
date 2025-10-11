@@ -1,0 +1,16 @@
+﻿{
+  "name": "HIL Test Product Reviews",
+  "description": "Testing HIL escalation with high thresholds",
+  "training_data": [
+    {"text": "Product broke after one day", "category": "Quality"},
+    {"text": "Delivery was late", "category": "Logistics"}
+  ],
+  "layers": ["tags", "xgboost", "llm"],
+  "hil_config": {
+    "enabled": true,
+    "tags_threshold": 0.95,
+    "xgboost_threshold": 0.95,
+    "llm_threshold": 0.95
+  },
+  "fallback_category": "Other"
+}

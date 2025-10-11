@@ -104,6 +104,19 @@
       - "8030:8030"
     restart: unless-stopped
 
+  hil-layer:
+    build: ./services/hil-layer
+    container_name: ucas-hil-layer
+    environment:
+      - DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
+    ports:
+      - "8040:8040"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+
 networks:
   default:
     name: ucas_network
