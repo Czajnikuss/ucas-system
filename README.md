@@ -62,7 +62,7 @@ Requirements:
 Clone and run:
 
 ```powershell
-git clone https://github.com/yourusername/ucas-system.git
+git clone https://github.com/Czajnikuss/ucas-system.git
 cd ucas-system
 docker compose up -d
 ```
@@ -184,3 +184,4 @@ MIT License - see LICENSE file
 ---
 
 **Built with ❤️ for production text classification**
+
