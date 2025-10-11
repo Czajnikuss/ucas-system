@@ -1,0 +1,70 @@
+# Python
+venv/
+.env
+__pycache__/
+*.py[cod]
+.Python
+
+# Virtualenv
+env/
+venv/
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Pytest
+.pytest_cache/
+
+# Logs
+logs/
+*.log
+
+# Docker / runtime volumes and persisted data
+volumes/
+postgres/
+redis/
+ollama/
+*/postgres/
+*/redis/
+
+# Models and other large artifacts
+volumes/models/
+**/models/
+
+# Secrets and keys
+id_ed25519
+id_ed25519.pub
+*.pem
+*.key
+*.crt
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+__pycache__/
+*.py[cod]
+.Python
+venv/
+volumes/postgres/
+volumes/redis/
+volumes/ollama/
+.vscode/
+.DS_Store
+test_data/
+*.log
+.env
