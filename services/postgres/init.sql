@@ -1,7 +1,20 @@
-﻿-- Enable extensions
+﻿-- Set up error handling
+DO $$ 
+BEGIN
+    -- Create user if not exists
+    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'ucas_user') THEN
+        CREATE USER ucas_user WITH PASSWORD 'ucas_password_123';
+    END IF;
+    
+    -- Grant database ownership
+    ALTER DATABASE ucas_db OWNER TO ucas_user;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Error during user setup: %', SQLERRM;
+END $$;
+
+-- Enable extensions (as superuser)
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 
 -- Create main database schema
 CREATE TABLE IF NOT EXISTS categorizers (
@@ -81,18 +94,33 @@ CREATE TABLE IF NOT EXISTS sample_quality (
 );
 
 
--- User setup
-DO $$
+-- Grant privileges on all objects to ucas_user
+DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'ucas_user') THEN
-        CREATE USER ucas_user WITH PASSWORD 'ucas_password_123';
-    END IF;
-END
-$$;
+    -- Grant privileges on all existing tables
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ucas_user;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ucas_user;
+    
+    -- Grant privileges on future tables
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ucas_user;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ucas_user;
+    
+    -- Grant schema usage
+    GRANT USAGE ON SCHEMA public TO ucas_user;
+    
+    -- Grant execute on functions
+    GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ucas_user;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO ucas_user;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Error during privilege setup: %', SQLERRM;
+END $$;
 
-
-GRANT ALL PRIVILEGES ON DATABASE ucas_db TO ucas_user;
-ALTER DATABASE ucas_db OWNER TO ucas_user;
-
-
-SELECT 'Database initialized successfully!' as message;
+SELECT format(
+    'Database initialized successfully at %s. User ucas_user %s.', 
+    NOW()::text,
+    CASE 
+        WHEN EXISTS (SELECT FROM pg_user WHERE usename = 'ucas_user') 
+        THEN 'exists and has proper privileges'
+        ELSE 'could not be verified - check logs'
+    END
+) as message;

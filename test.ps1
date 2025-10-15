@@ -31,10 +31,10 @@ Write-Host "[3/10] Test Duplicate Name (Should Return 409)" -ForegroundColor Yel
 $dupResponse = curl.exe -s -X POST http://localhost:8001/train -H "Content-Type: application/json" -d "@test_data/e2e_train.json"
 $dupJson = $dupResponse | ConvertFrom-Json
 if ($dupJson.detail.error -eq "Name already exists") {
-    Write-Host "  ✓ Duplicate correctly rejected" -ForegroundColor Green
+    Write-Host "  [OK] Duplicate correctly rejected" -ForegroundColor Green
     Write-Host "  Suggestions: $($dupJson.detail.suggestions -join ', ')`n" -ForegroundColor Cyan
 } else {
-    Write-Host "  ✗ Duplicate should have been rejected`n" -ForegroundColor Red
+    Write-Host "  [FAIL] Duplicate should have been rejected`n" -ForegroundColor Red
 }
 
 
@@ -88,29 +88,31 @@ Start-Sleep -Seconds 12
 
 $post_restart = Invoke-RestMethod -Uri "http://localhost:8001/categorizers" -Method Get
 if ($post_restart.Count -ge $categorizers.Count) {
-    Write-Host "  ✓ Persistence confirmed ($($post_restart.Count) categorizers)" -ForegroundColor Green
+    Write-Host "  [OK] Persistence confirmed ($($post_restart.Count) categorizers)" -ForegroundColor Green
 } else {
-    Write-Host "  ✗ Data loss!`n" -ForegroundColor Red
+    Write-Host "  [FAIL] Data loss!`n" -ForegroundColor Red
 }
 
 # 9. RE-CLASSIFY AFTER RESTART
 Write-Host "[9/10] Re-classify After Restart" -ForegroundColor Yellow
 $final = curl.exe -s -X POST http://localhost:8001/classify -H "Content-Type: application/json" -d "@test_data/e2e_classify1.json" | ConvertFrom-Json
 if ($final.category) {
-    Write-Host "  ✓ Category: $($final.category) [$($final.method), $([math]::Round($final.processing_time_ms, 2))ms]`n" -ForegroundColor Green
+    Write-Host "  [OK] Category: $($final.category) [$($final.method), $([math]::Round($final.processing_time_ms, 2))ms]`n" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Classification failed`n" -ForegroundColor Red
 }
 
 # 10. FINAL STATUS
 Write-Host "[10/10] Final System Status" -ForegroundColor Yellow
 $containers = docker compose ps --format json | ConvertFrom-Json
 foreach ($c in $containers) {
-    $status = if ($c.State -eq "running") { "✓" } else { "✗" }
+    $status = if ($c.State -eq "running") { "[OK]" } else { "[FAIL]" }
     $color = if ($c.State -eq "running") { "Green" } else { "Red" }
     Write-Host "  $status $($c.Service): $($c.State)" -ForegroundColor $color
 }
 
 Write-Host "`n=== E2E TEST COMPLETE ===" -ForegroundColor Cyan
-Write-Host "✓ All layers operational" -ForegroundColor Green
-Write-Host "✓ Persistence working" -ForegroundColor Green
-Write-Host "✓ Classification working" -ForegroundColor Green
-Write-Host "`n🎉 SYSTEM READY FOR NEXT SESSION 🎉`n" -ForegroundColor Green
+Write-Host "[OK] All layers operational" -ForegroundColor Green
+Write-Host "[OK] Persistence working" -ForegroundColor Green
+Write-Host "[OK] Classification working" -ForegroundColor Green
+Write-Host "`n=== SYSTEM READY FOR NEXT SESSION ===`n" -ForegroundColor Green
