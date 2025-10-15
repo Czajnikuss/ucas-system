@@ -1,0 +1,13 @@
+﻿{
+  "categorizer_id": "test-fallback",
+  "training_data": [
+    {"text": "Produkt uszkodzony", "category": "Jakość"},
+    {"text": "Słaba jakość", "category": "Jakość"},
+    {"text": "Dostawa opóźniona", "category": "Logistyka"},
+    {"text": "Paczka zgubiona", "category": "Logistyka"},
+    {"text": "Obsługa pomocna", "category": "Obsługa"},
+    {"text": "Agent rozwiązał problem", "category": "Obsługa"}
+  ],
+  "layers": ["tags", "xgboost", "llm"],
+  "fallback_category": "Inne"
+}

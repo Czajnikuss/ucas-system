@@ -1,0 +1,1 @@
+﻿{"name":"Test 141536","training_data":[{"text":"success","category":"Pass"},{"text":"failure","category":"Fail"}],"layers":["tags"],"fallback_category":"Unknown"}

@@ -1,0 +1,12 @@
+﻿{
+  "categorizer_id": "cascade-test",
+  "training_data": [
+    {"text": "Produkt uszkodzony i zepsuty", "category": "Jakość"},
+    {"text": "Słaba jakość materiałów", "category": "Jakość"},
+    {"text": "Dostawa opóźniona bardzo", "category": "Logistyka"},
+    {"text": "Przesyłka zgubiona", "category": "Logistyka"},
+    {"text": "Obsługa bardzo pomocna", "category": "Obsługa"},
+    {"text": "Agent rozwiązał problem", "category": "Obsługa"}
+  ],
+  "layers": ["tags", "xgboost", "llm"]
+}

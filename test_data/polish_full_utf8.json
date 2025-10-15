@@ -1,0 +1,28 @@
+﻿{
+  "categorizer_id": "polish-full-utf8",
+  "max_keywords": 8,
+  "min_keyword_length": 3,
+  "normalize_text": false,
+  "use_polish_stopwords": true,
+  "training_data": [
+    {"text": "Produkt przyszedł uszkodzony i zepsuty", "category": "Jakość"},
+    {"text": "Słaba jakość materiałów, tandetna konstrukcja", "category": "Jakość"},
+    {"text": "Wadliwy towar, nie działa prawidłowo", "category": "Jakość"},
+    {"text": "Uszkodzone części, widoczne defekty produkcyjne", "category": "Jakość"},
+    
+    {"text": "Dostawa była opóźniona o dwa tygodnie", "category": "Logistyka"},
+    {"text": "Przesyłka trwała wieczność, brak aktualizacji", "category": "Logistyka"},
+    {"text": "Paczka nigdy nie dotarła, zgubiona w transporcie", "category": "Logistyka"},
+    {"text": "Spóźniona dostawa, nie dotrzymano terminu", "category": "Logistyka"},
+    
+    {"text": "Obsługa klienta była pomocna i szybka", "category": "Obsługa"},
+    {"text": "Zespół wsparcia rozwiązał mój problem natychmiast", "category": "Obsługa"},
+    {"text": "Przedstawiciel był profesjonalny i uprzejmy", "category": "Obsługa"},
+    {"text": "Agent udzielił doskonałej pomocy", "category": "Obsługa"},
+    
+    {"text": "Za drogo jak na oferowaną jakość", "category": "Cena"},
+    {"text": "Zawyżona cena w porównaniu do konkurencji", "category": "Cena"},
+    {"text": "Nie warte swojej ceny, słaby stosunek jakości", "category": "Cena"},
+    {"text": "Świetna okazja, przystępna cena", "category": "Cena"}
+  ]
+}

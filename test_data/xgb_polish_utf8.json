@@ -1,0 +1,42 @@
+﻿{
+  "categorizer_id": "xgb-polish-utf8",
+  "training_data": [
+    {"text": "Produkt przyszedł uszkodzony i zepsuty", "category": "Jakość"},
+    {"text": "Słaba jakość materiałów, tandetna konstrukcja", "category": "Jakość"},
+    {"text": "Wadliwy towar, nie działa prawidłowo", "category": "Jakość"},
+    {"text": "Produkt złamany i nieużyteczny", "category": "Jakość"},
+    {"text": "Części brakujące i uszkodzone", "category": "Jakość"},
+    {"text": "Przestało działać po jednym dniu", "category": "Jakość"},
+    {"text": "Widoczne defekty produkcyjne", "category": "Jakość"},
+    {"text": "Źle wykonany produkt, tandetny", "category": "Jakość"},
+    
+    {"text": "Dostawa była opóźniona o dwa tygodnie", "category": "Logistyka"},
+    {"text": "Przesyłka trwała wieczność, brak aktualizacji", "category": "Logistyka"},
+    {"text": "Paczka nigdy nie dotarła, zgubiona", "category": "Logistyka"},
+    {"text": "Spóźniona dostawa, nie dotrzymano terminu", "category": "Logistyka"},
+    {"text": "Zły adres, paczka zwrócona", "category": "Logistyka"},
+    {"text": "Wysoki koszt wysyłki", "category": "Logistyka"},
+    {"text": "Brak informacji o przesyłce", "category": "Logistyka"},
+    {"text": "Paczka zatrzymana w urzędzie celnym", "category": "Logistyka"},
+    
+    {"text": "Obsługa klienta była bardzo pomocna", "category": "Obsługa"},
+    {"text": "Zespół wsparcia rozwiązał problem szybko", "category": "Obsługa"},
+    {"text": "Agent był profesjonalny i uprzejmy", "category": "Obsługa"},
+    {"text": "Przedstawiciel odpowiedział na pytania", "category": "Obsługa"},
+    {"text": "Doskonała obsługa klienta", "category": "Obsługa"},
+    {"text": "Pomocny personel, świetna opieka", "category": "Obsługa"},
+    {"text": "Agent rozwiązał mój problem natychmiast", "category": "Obsługa"},
+    {"text": "Obsługa ponad oczekiwania", "category": "Obsługa"}
+  ],
+  "params": {
+    "max_depth": 5,
+    "n_estimators": 100,
+    "learning_rate": 0.1
+  },
+  "word2vec_params": {
+    "vector_size": 100,
+    "window": 5,
+    "min_count": 1,
+    "epochs": 20
+  }
+}

@@ -1,0 +1,1 @@
+﻿{"categorizer_id":"demo","name":"Demo","training_data":[{"text":"broken","category":"Quality"},{"text":"late","category":"Logistics"}],"layers":["tags","llm"],"fallback_category":"Other"}
