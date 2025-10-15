@@ -11,7 +11,10 @@
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # Use the same DB user created by the image (ucas_user). The default 'postgres' role
+      # may not exist if POSTGRES_USER is set to another name, so explicit check avoids
+      # repeated "role \"postgres\" does not exist" errors.
+      test: ["CMD-SHELL", "pg_isready -U ucas_user"]
       interval: 10s
       timeout: 5s
       retries: 5

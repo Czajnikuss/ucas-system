@@ -8,7 +8,8 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:ucas_password_123@postgres:5432/ucas_db"
+    # Default fallback should use the ucas user created by services/postgres/init.sql
+    "postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db"
 )
 
 engine = create_engine(DATABASE_URL)
