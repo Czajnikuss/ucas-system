@@ -11,10 +11,10 @@
     ports:
       - "5432:5432"
     healthcheck:
-      # Use the same DB user created by the image (ucas_user). The default 'postgres' role
-      # may not exist if POSTGRES_USER is set to another name, so explicit check avoids
-      # repeated "role \"postgres\" does not exist" errors.
-      test: ["CMD-SHELL", "pg_isready -U ucas_user"]
+      # Check the server using the user and the actual database name. Using only -U
+      # makes pg_isready attempt to connect to a database named after the user, which
+      # fails when POSTGRES_DB != POSTGRES_USER. Use -d to target the real DB (ucas_db).
+      test: ["CMD-SHELL", "pg_isready -U ucas_user -d ucas_db"]
       interval: 10s
       timeout: 5s
       retries: 5
