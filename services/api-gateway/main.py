@@ -9,7 +9,8 @@ from typing import Optional, Dict
 app = FastAPI(
     title="UCAS API Gateway",
     version="1.0.0",
-    description="Universal Categorization as a Service - API Gateway"
+    description="Universal Categorization as a Service - API Gateway",
+    docs_url="/swagger"
 )
 
 # Configuration

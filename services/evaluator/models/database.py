@@ -2,6 +2,7 @@
 from sqlalchemy import create_engine, Column, String, DateTime, Float, Boolean, Text, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import sessionmaker, relationship
 import uuid
 from datetime import datetime
@@ -38,6 +39,8 @@ class TrainingSample(Base):
     categorizer_id = Column(UUID(as_uuid=True), ForeignKey("categorizers.id"), nullable=False)
     text = Column(Text, nullable=False)
     category = Column(String(100), nullable=False)
+    embedding = Column(Vector(768), nullable=True)  # For quality scoring
+    embedding = Column(Vector(768), nullable=True)  # For quality scoring
     
     # Quality Scoring Fields
     quality_score = Column(Float, default=None)

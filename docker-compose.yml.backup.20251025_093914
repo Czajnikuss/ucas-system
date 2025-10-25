@@ -130,22 +130,6 @@
 
 
 
-
-  evaluator:
-    build: ./services/evaluator
-    container_name: ucas-evaluator
-    ports:
-      - "8060:8060"
-    environment:
-      - DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
-    depends_on:
-      postgres:
-        condition: service_healthy
-      llm-layer:
-        condition: service_started
-    volumes:
-      - ./config:/app/config:ro
-    restart: unless-stopped
   embeddings-service:
     build: ./services/embeddings-service
     container_name: ucas-embeddings

@@ -7,12 +7,20 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
 import numpy as np
 from unidecode import unidecode
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 app = FastAPI(
     title="UCAS Tags Layer",
     version="3.0.0",
-    description="Multi-language keyword-based categorization (Polish optimized)"
+    description="Multi-language keyword-based categorization (Polish optimized)",
+    docs_url="/swagger"
 )
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Polish stopwords
 POLISH_STOPWORDS = set([
@@ -278,6 +286,36 @@ async def get_keywords(categorizer_id: str):
         response["statistics"] = categorizer_stats[categorizer_id]
     
     return response
+
+@app.post("/restore")
+async def restore_categorizer(request: dict):
+    """Restore categorizer keywords from persistence without retraining"""
+    categorizer_id = request.get("categorizer_id")
+    keywords = request.get("keywords", {})
+    categories = request.get("categories", [])
+    
+    if not categorizer_id:
+        raise HTTPException(status_code=400, detail="categorizer_id required")
+    
+    # Restore in-memory state
+    categorizer_keywords[categorizer_id] = keywords
+    
+    # Calculate stats
+    categorizer_stats[categorizer_id] = {
+        cat: len(keywords.get(cat, []))
+        for cat in categories
+    }
+    
+    logger.info(f"✓ Restored categorizer {categorizer_id} - {len(keywords)} categories")
+    
+    return {
+        "status": "restored",
+        "categorizer_id": categorizer_id,
+        "categories": categories,
+        "keywords_count": {cat: len(keywords.get(cat, [])) for cat in categories}
+    }
+
+
 
 if __name__ == "__main__":
     import uvicorn

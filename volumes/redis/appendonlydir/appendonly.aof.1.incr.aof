@@ -1,0 +1,35 @@
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+SET
+$8
+test_key
+$10
+Hello UCAS
+*3
+$3
+SET
+$8
+test_key
+$10
+Hello UCAS
+*5
+$3
+SET
+$8
+api_test
+$19
+Gateway is working!
+$4
+PXAT
+$13
+1760045456361
+*2
+$3
+DEL
+$8
+api_test

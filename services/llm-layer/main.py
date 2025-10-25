@@ -1,4 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
+from logging import config
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, List, Optional
@@ -8,7 +9,8 @@ import json
 app = FastAPI(
     title="UCAS LLM Layer",
     version="1.3.0",
-    description="LLM classification with fallback category support"
+    description="LLM classification with fallback category support",
+    docs_url="/swagger"
 )
 
 OLLAMA_URL = "http://ollama:11434"
@@ -151,11 +153,57 @@ async def classify(request: ClassifyRequest):
     num_gpu = config.get("num_gpu", 0)
     fallback = config.get("fallback_category")
     
+    # RAG: Fetch similar examples dynamically
+    import sys
+    print("=" * 60, file=sys.stderr, flush=True)
+    print(f"RAG START: categorizer={request.categorizer_id}, text='{request.text[:50]}'", file=sys.stderr, flush=True)
+    
+    examples_to_use = config["examples"][:5]  # Default fallback
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as rag_client:
+            print(f"RAG: Calling orchestrator /search_similar...", file=sys.stderr, flush=True)
+            rag_response = await rag_client.post(
+                "http://ucas-orchestrator:8001/search_similar",
+                json={
+                    "categorizer_id": request.categorizer_id,
+                    "query_text": request.text,
+                    "top_k": 5
+                }
+            )
+            print(f"RAG: Response status {rag_response.status_code}", file=sys.stderr, flush=True)
+            
+            if rag_response.status_code == 200:
+                rag_data = rag_response.json()
+                print(f"RAG: Found {len(rag_data['samples'])} similar samples", file=sys.stderr, flush=True)
+                
+                # Convert RAG samples to example format
+                rag_examples = [
+                    {"text": s["text"], "category": s["category"]}
+                    for s in rag_data["samples"]
+                ]
+                
+                if rag_examples:
+                    examples_to_use = rag_examples
+                    print(f"RAG: Using {len(examples_to_use)} RAG examples", file=sys.stderr, flush=True)
+                else:
+                    print(f"RAG: No samples found, using static", file=sys.stderr, flush=True)
+            else:
+                print(f"RAG: HTTP error {rag_response.status_code}, fallback to static", file=sys.stderr, flush=True)
+                
+    except Exception as e:
+        print(f"RAG: Exception - {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+        print(f"RAG: Using static examples fallback", file=sys.stderr, flush=True)
+    
+    print(f"RAG END - Final examples count: {len(examples_to_use)}", file=sys.stderr, flush=True)
+    print("=" * 60, file=sys.stderr, flush=True)
+    
+    # Build prompt with RAG or static examples
     try:
         prompt = build_classification_prompt(
             request.text, 
             config["categories"], 
-            config["examples"][:5],
+            examples_to_use,
             fallback
         )
         
@@ -189,6 +237,7 @@ async def classify(request: ClassifyRequest):
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Classification failed: {str(e)}")
+
 
 def build_classification_prompt(text: str, categories: List[str], examples: List[Dict], fallback_category: Optional[str] = None) -> str:
     """Build prompt with optional fallback category"""

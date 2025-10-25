@@ -13,7 +13,8 @@ import os
 app = FastAPI(
     title="UCAS HIL Layer",
     version="1.0.0",
-    description="Human-in-the-Loop review service"
+    description="Human-in-the-Loop review service",
+    docs_url="/swagger"
 )
 
 DATABASE_URL = os.getenv(

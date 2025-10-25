@@ -1,0 +1,56 @@
+﻿# ============================================
+# UCAS SYSTEM - DEFAULT CONFIGURATION
+# ============================================
+# This file is tracked in git
+# For local overrides: create config/config.local.yaml
+# For secrets: create config/secrets.yaml (GITIGNORED)
+
+# === Data Quality & Curation ===
+quality:
+  # Validation
+  min_sample_length: 10
+  duplicate_similarity_threshold: 0.95
+  
+  # Scoring Weights (must sum to 1.0)
+  weights:
+    alignment: 0.5
+    informativeness: 0.2
+    uniqueness: 0.15
+    density: 0.15
+  
+  # Background Worker
+  background_scoring:
+    enabled: true
+    batch_size: 5
+    interval_seconds: 300
+    llm_timeout: 30
+  
+  # Resource Limits
+  resources:
+    max_concurrent_evaluations: 2
+    pause_on_classify: true
+  
+  # Curation
+  curation:
+    enabled: true
+    trigger_threshold: 50
+    dataset_max_size: 800
+    min_quality_score: 0.1
+  
+  # Re-evaluation
+  reevaluation:
+    min_iterations: 2
+    max_iterations: 8
+    force_before_training: true
+  
+  # Similarity Context
+  similarity:
+    nearest_samples_count: 3
+    farthest_samples_count: 3
+    density_radius: 0.3
+
+# === Model Configuration ===
+models:
+  quality_scorer:
+    name: phi3:mini
+    num_gpu: 0

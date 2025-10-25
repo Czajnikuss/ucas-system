@@ -3,7 +3,7 @@ uvicorn[standard]==0.32.0
 httpx==0.27.2
 sqlalchemy==2.0.35
 psycopg2-binary==2.9.9
-alembic==1.13.3
-unidecode
 PyYAML==6.0.1
 pgvector
+
+scikit-learn==1.3.2

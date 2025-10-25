@@ -1,0 +1,22 @@
+﻿{
+  "name": "quality-test-e2e",
+  "description": "E2E test for quality scoring",
+  "training_data": [
+    {"text": "This is amazing! I love it!", "category": "positive"},
+    {"text": "Terrible experience, very disappointed", "category": "negative"},
+    {"text": "It's okay, nothing special", "category": "neutral"},
+    {"text": "Best product ever! Highly recommend!", "category": "positive"},
+    {"text": "Worst purchase I've ever made", "category": "negative"},
+    {"text": "Average quality, meets expectations", "category": "neutral"},
+    {"text": "Absolutely fantastic! Five stars!", "category": "positive"},
+    {"text": "Complete waste of money", "category": "negative"},
+    {"text": "Decent, but could be better", "category": "neutral"},
+    {"text": "Exceptional service and quality!", "category": "positive"}
+  ],
+  "layers": ["embeddings", "llm"],
+  "fallback_category": "neutral",
+  "llm_config": {
+    "model": "phi3:mini",
+    "confidence_threshold": 0.7
+  }
+}

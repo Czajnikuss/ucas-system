@@ -12,9 +12,11 @@ EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Error during user setup: %', SQLERRM;
 END $$;
 
+
 -- Enable extensions (as superuser)
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 -- Create main database schema
 CREATE TABLE IF NOT EXISTS categorizers (
@@ -31,14 +33,33 @@ CREATE TABLE IF NOT EXISTS categorizers (
 );
 
 
+
 CREATE TABLE IF NOT EXISTS training_samples (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     categorizer_id UUID REFERENCES categorizers(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
     category VARCHAR(100) NOT NULL,
+    embedding VECTOR(384),
+    
+    -- Quality Scoring Fields
+    quality_score FLOAT DEFAULT NULL,
+    quality_scored_at TIMESTAMP,
+    quality_reasoning TEXT,
+    quality_metrics JSONB,
+    
+    -- Curation Fields
+    is_active BOOLEAN DEFAULT TRUE,
+    archived_at TIMESTAMP,
+    archive_reason VARCHAR(100),
+    
+    -- Legacy field (kept for backwards compatibility)
     is_new BOOLEAN DEFAULT FALSE,
+    
+    -- Metadata
+    source VARCHAR(50) DEFAULT 'manual',
     created_at TIMESTAMP DEFAULT NOW()
 );
+
 
 
 CREATE TABLE IF NOT EXISTS classifications (
@@ -48,11 +69,13 @@ CREATE TABLE IF NOT EXISTS classifications (
     predicted_category VARCHAR(100),
     confidence FLOAT,
     method VARCHAR(50),
+    reasoning TEXT,
     is_fallback BOOLEAN DEFAULT FALSE,
     processing_time_ms FLOAT,
     cascade_results JSONB,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
 
 
 CREATE TABLE IF NOT EXISTS hil_reviews (
@@ -71,14 +94,32 @@ CREATE TABLE IF NOT EXISTS hil_reviews (
 );
 
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_training_samples_categorizer ON training_samples(categorizer_id);
-CREATE INDEX IF NOT EXISTS idx_training_samples_is_new ON training_samples(is_new);
-CREATE INDEX IF NOT EXISTS idx_classifications_categorizer ON classifications(categorizer_id);
-CREATE INDEX IF NOT EXISTS idx_classifications_created ON classifications(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_hil_reviews_categorizer ON hil_reviews(categorizer_id);
-CREATE INDEX IF NOT EXISTS idx_hil_reviews_status ON hil_reviews(status);
-CREATE INDEX IF NOT EXISTS idx_hil_reviews_created ON hil_reviews(created_at DESC);
+
+-- Curation Runs (tracking history)
+CREATE TABLE IF NOT EXISTS curation_runs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    categorizer_id UUID REFERENCES categorizers(id) ON DELETE CASCADE,
+    run_at TIMESTAMP DEFAULT NOW(),
+    trigger_reason VARCHAR(50),
+    iteration_number INT,
+    
+    -- Stats
+    total_samples_before INT,
+    total_samples_after INT,
+    archived_count INT,
+    removed_low_quality_count INT,
+    avg_quality_before FLOAT,
+    avg_quality_after FLOAT,
+    
+    -- Config snapshot
+    config JSONB,
+    
+    -- Re-evaluation tracking
+    triggered_reevaluation BOOLEAN DEFAULT FALSE,
+    
+    processing_time_ms INT
+);
+
 
 
 -- Future tables (for Evaluator - TIER 2)
@@ -92,6 +133,35 @@ CREATE TABLE IF NOT EXISTS sample_quality (
     overall_score FLOAT,
     evaluated_at TIMESTAMP DEFAULT NOW()
 );
+
+
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_categorizers_id ON categorizers(categorizer_id);
+CREATE INDEX IF NOT EXISTS idx_categorizers_name ON categorizers(name);
+
+CREATE INDEX IF NOT EXISTS idx_training_samples_categorizer ON training_samples(categorizer_id);
+CREATE INDEX IF NOT EXISTS idx_training_samples_is_new ON training_samples(is_new);
+CREATE INDEX IF NOT EXISTS idx_training_samples_embedding ON training_samples USING ivfflat (embedding vector_cosine_ops);
+
+-- New indexes for quality scoring & curation
+CREATE INDEX IF NOT EXISTS idx_training_samples_unscored 
+    ON training_samples(categorizer_id, quality_score) 
+    WHERE quality_score IS NULL AND is_active = TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_training_samples_active_quality 
+    ON training_samples(categorizer_id, quality_score DESC) 
+    WHERE is_active = TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_classifications_categorizer ON classifications(categorizer_id);
+CREATE INDEX IF NOT EXISTS idx_classifications_created ON classifications(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_hil_reviews_categorizer ON hil_reviews(categorizer_id);
+CREATE INDEX IF NOT EXISTS idx_hil_reviews_status ON hil_reviews(status);
+CREATE INDEX IF NOT EXISTS idx_hil_reviews_created ON hil_reviews(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_curation_runs_categorizer ON curation_runs(categorizer_id, run_at DESC);
+
 
 
 -- Grant privileges on all objects to ucas_user
@@ -115,6 +185,7 @@ EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Error during privilege setup: %', SQLERRM;
 END $$;
 
+
 SELECT format(
     'Database initialized successfully at %s. User ucas_user %s.', 
     NOW()::text,
@@ -124,3 +195,75 @@ SELECT format(
         ELSE 'could not be verified - check logs'
     END
 ) as message;
+
+
+
+-- Similarity search function for embeddings (updated for active samples)
+CREATE OR REPLACE FUNCTION search_similar_samples(
+    query_embedding VECTOR(384),
+    categorizer_uuid UUID,
+    similarity_threshold FLOAT DEFAULT 0.7,
+    limit_count INT DEFAULT 5
+) RETURNS TABLE (
+    id UUID,
+    text TEXT,
+    category VARCHAR(100),
+    similarity FLOAT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ts.id,
+        ts.text,
+        ts.category,
+        1 - (ts.embedding <=> query_embedding) AS similarity
+    FROM training_samples ts
+    WHERE ts.categorizer_id = categorizer_uuid
+        AND ts.embedding IS NOT NULL
+        AND ts.is_active = TRUE
+        AND (1 - (ts.embedding <=> query_embedding)) >= similarity_threshold
+    ORDER BY ts.embedding <=> query_embedding
+    LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+-- Helper function: Count unscored samples
+CREATE OR REPLACE FUNCTION count_unscored_samples(cat_id UUID) 
+RETURNS INT AS $$
+    SELECT COUNT(*)::INT 
+    FROM training_samples 
+    WHERE categorizer_id = cat_id 
+      AND quality_score IS NULL 
+      AND is_active = TRUE;
+$$ LANGUAGE SQL;
+
+
+
+-- Helper function: Get curation iteration count
+CREATE OR REPLACE FUNCTION get_curation_iteration(cat_id UUID) 
+RETURNS INT AS $$
+    SELECT COALESCE(MAX(iteration_number), 0)::INT 
+    FROM curation_runs 
+    WHERE categorizer_id = cat_id;
+$$ LANGUAGE SQL;
+
+
+
+-- Helper function: Check if re-evaluation needed
+CREATE OR REPLACE FUNCTION needs_reevaluation(cat_id UUID, max_iterations INT DEFAULT 8) 
+RETURNS BOOLEAN AS $$
+    SELECT 
+        CASE 
+            WHEN COUNT(*) = 0 THEN FALSE
+            WHEN MAX(iteration_number) - COALESCE(
+                (SELECT MAX(iteration_number) 
+                 FROM curation_runs 
+                 WHERE categorizer_id = cat_id AND triggered_reevaluation = TRUE), 0
+            ) >= max_iterations THEN TRUE
+            ELSE FALSE
+        END
+    FROM curation_runs
+    WHERE categorizer_id = cat_id;
+$$ LANGUAGE SQL;

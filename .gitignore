@@ -1,14 +1,36 @@
-# Volumes - runtime data (excluded from Docker context)
-volumes/
-postgres_data/
-redis_data/
-ollama_data/
+﻿# ============================================
+# UCAS SYSTEM - GITIGNORE
+# ============================================
 
+# Configuration - Local & Secrets
+config/config.local.yaml
+config/secrets.yaml
 
+# Environment files (legacy, if any)
+.env
+.env.local
+.env.*.local
 
-# Git
-.git/
-.gitignore
+# Secrets
+secrets/
+*.key
+*.pem
+
+# Database dumps
+*.sql
+backup*.sql
+
+# Runtime data
+volumes/postgres/*
+volumes/redis/dump.rdb
+volumes/ollama/*
+volumes/models/*
+
+# Keep configuration files
+!volumes/postgres/*.conf
+!volumes/postgres/init.sql
+!services/postgres/init.sql
+!services/*/models/*.json
 
 # Python
 __pycache__/
@@ -42,7 +64,6 @@ desktop.ini
 
 # Logs
 *.log
-
 
 # Temporary files
 *.tmp
