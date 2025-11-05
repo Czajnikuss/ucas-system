@@ -73,3 +73,32 @@ desktop.ini
 # Documentation drafts
 *.draft.md
 notes/
+
+# Development
+docker-compose.override.yml
+.env.local
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log

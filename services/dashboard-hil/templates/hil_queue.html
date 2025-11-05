@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HIL Review Queue</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta http-equiv="refresh" content="30">
+    <style>
+        body { background-color: #f0f8f0; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-success mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">✅ HIL Review Dashboard</span>
+            <span class="text-white">Pending: <strong>{{ total_pending }}</strong></span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="alert alert-info">
+            <strong>Auto-refresh:</strong> This page refreshes every 30 seconds
+        </div>
+        
+        {% if total_pending == 0 %}
+        <div class="alert alert-success">
+            <h4>🎉 All caught up!</h4>
+            <p>No pending reviews at this time.</p>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Pending Reviews ({{ total_pending }})</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Text</th>
+                            <th>Suggested Category</th>
+                            <th>Confidence</th>
+                            <th>Categorizer</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for review in pending_reviews %}
+                        <tr>
+                            <td>
+                                <strong>{{ review.text[:80] }}</strong>
+                                {% if review.text|length > 80 %}...{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-warning text-dark">
+                                    {{ review.suggested_category }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if review.suggested_confidence %}
+                                    {{ "%.2f"|format(review.suggested_confidence) }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td><code>{{ review.categorizer_id }}</code></td>
+                            <td>{{ review.created_at[:16] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="mt-4 text-center">
+            <p class="text-muted">Use API to submit reviews: POST /review/{review_id}</p>
+            <a href="http://localhost:8040/docs" target="_blank" class="btn btn-secondary">
+                📚 HIL API Docs
+            </a>
+        </div>
+    </div>
+</body>
+</html>

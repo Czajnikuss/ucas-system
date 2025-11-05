@@ -1,9 +1,87 @@
-﻿# ============================================
-# UCAS SYSTEM - DEFAULT CONFIGURATION
+﻿# config/config.yaml - Rozszerzona wersja
+
 # ============================================
-# This file is tracked in git
-# For local overrides: create config/config.local.yaml
-# For secrets: create config/secrets.yaml (GITIGNORED)
+# UCAS SYSTEM - CONFIGURATION
+# ============================================
+
+# === System ===
+system:
+  name: "UCAS"
+  version: "3.1.0"
+  environment: "development"  # development | staging | production
+
+# === Orchestrator ===
+orchestrator:
+  service:
+    host: "0.0.0.0"
+    port: 8001
+    workers: 4
+  
+  # Layer URLs (overridable via env)
+  layers:
+    tags:
+      url: "http://tags-layer:8010"
+      timeout: 5
+      enabled: true
+    
+    xgboost:
+      url: "http://xgboost-layer:8003"
+      timeout: 10
+      enabled: true
+    
+    llm:
+      url: "http://llm-layer:8004"
+      timeout: 60
+      enabled: true
+      model: "phi3:mini"
+    
+    rag:
+      url: "http://rag-service:8007"
+      timeout: 30
+      enabled: true
+    
+    hil:
+      url: "http://hil-layer:8040"
+      timeout: 5
+      enabled: true
+    
+    embeddings:
+      url: "http://embeddings-service:8006"
+      timeout: 30
+  
+  # Cascade thresholds
+  cascade:
+    default_strategy: "cascade"
+    
+    thresholds:
+      tags: 0.95        # Very high - exact match
+      xgboost: 0.75     # Medium - ML prediction
+      llm: 0.60         # Lower - accept LLM reasoning
+      hil: 0.0          # Always accept human
+    
+    fallback:
+      enabled: true
+      default_category: "uncategorized"
+  
+  # HIL escalation
+  hil:
+    enabled: true
+    auto_escalate: true
+    confidence_threshold: 0.6
+    queue_max_size: 1000
+  
+  # Training
+  training:
+    min_samples: 2
+    max_samples: 10000
+    require_embeddings: true
+    auto_quality_score: true
+  
+  # Persistence
+  persistence:
+    enabled: true
+    base_path: "/data/categorizers"
+    auto_restore: true
 
 # === Data Quality & Curation ===
 quality:
@@ -13,10 +91,11 @@ quality:
   
   # Scoring Weights (must sum to 1.0)
   weights:
-    alignment: 0.5
-    informativeness: 0.2
+    alignment: 0.25
+    informativeness: 0.20
     uniqueness: 0.15
-    density: 0.15
+    density: 0.10
+    llm_reasoning: 0.30
   
   # Background Worker
   background_scoring:
@@ -49,8 +128,91 @@ quality:
     farthest_samples_count: 3
     density_radius: 0.3
 
-# === Model Configuration ===
+# === Models ===
 models:
   quality_scorer:
     name: phi3:mini
     num_gpu: 0
+  
+  ollama:
+    base_url: "http://ollama:11434"
+    temperature: 0.1
+    num_predict: 300
+    repeat_penalty: 1.1
+
+# === Database ===
+database:
+  pool_size: 10
+  max_overflow: 20
+  echo: false
+
+# === Vector Search ===
+pgvector:
+  similarity_threshold: 0.7
+  max_results: 10
+  index_type: "ivfflat"
+
+# === Embeddings ===
+embeddings:
+  model: "sentence-transformers/all-MiniLM-L6-v2"
+  dimension: 384
+  normalize: true
+  batch_size: 32
+
+# === Dashboards ===
+dashboards:
+  # Admin Dashboard - full dataset management
+  admin:
+    enabled: true
+    port: 8080
+    auth_required: false  # Set true when ready
+    features:
+      - categorizer_management
+      - training_data_editor
+      - quality_analytics
+      - rag_insights
+      - performance_metrics
+      - system_health
+  
+  # HIL Dashboard - review only
+  hil:
+    enabled: true
+    port: 8081
+    auth_required: false
+    features:
+      - pending_reviews
+      - review_history
+      - reviewer_stats
+    
+    # Queue settings
+    items_per_page: 20
+    auto_refresh_seconds: 30
+  
+  # Viewer Dashboard - read-only metrics
+  viewer:
+    enabled: false
+    port: 8082
+    auth_required: false
+    features:
+      - categorizer_list
+      - classification_history
+      - basic_stats
+
+# === Logging ===
+logging:
+  level: "INFO"
+  format: "json"
+  output: "stdout"
+  
+  # Per-service overrides
+  services:
+    orchestrator: "INFO"
+    evaluator: "INFO"
+    hil: "INFO"
+    dashboard: "DEBUG"
+
+# === Monitoring ===
+monitoring:
+  prometheus_enabled: false
+  metrics_port: 9090
+  health_check_interval: 30

@@ -1,4 +1,4 @@
-﻿# models/database.py
+# models/database.py
 from sqlalchemy import create_engine, Column, String, DateTime, Float, Boolean, Text, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 import uuid
 from datetime import datetime
 import os
+from config_loader import config
 
 
 Base = declarative_base()
@@ -88,6 +89,7 @@ class CurationRun(Base):
     categorizer = relationship("Categorizer", back_populates="curation_runs")
 
 
+# W models/database.py - klasa Classification
 class Classification(Base):
     __tablename__ = "classifications"
 
@@ -97,12 +99,14 @@ class Classification(Base):
     predicted_category = Column(String(100))
     confidence = Column(Float)
     method = Column(String(50))
+    reasoning = Column(Text)  # ✅ DODANE - zgodne z SQL
     is_fallback = Column(Boolean, default=False)
     processing_time_ms = Column(Float)
     cascade_results = Column(JSONB)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     categorizer = relationship("Categorizer", back_populates="classifications")
+
 
 
 class HILReview(Base):
@@ -125,10 +129,7 @@ class HILReview(Base):
 
 
 # Database connection from environment
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db"
-)
+DATABASE_URL = config.get("database.url")
 
 
 engine = create_engine(DATABASE_URL)

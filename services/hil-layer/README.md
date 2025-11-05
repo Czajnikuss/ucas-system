@@ -1,168 +1,77 @@
-# HIL Layer Service
+# UCAS HIL Layer - Human-in-the-Loop Review Service
 
-The Human-in-the-Loop (HIL) Layer is a service that manages the review process for uncertain or low-confidence classifications. It allows human experts to review and correct machine learning model predictions, creating a feedback loop that improves model accuracy over time.
+Serwis do escalacji Classifications, które AI nie może zaklasyfikować. Umożliwia człowiekowi weryfikację i dodawanie nowych samples do training data.
 
-## Features
+## 🚀 Quick Start
 
-- Escalation of classifications for human review
-- Queue management for pending reviews
-- Review submission and tracking
-- Training data collection from human reviews
-- Statistics and monitoring
-- Integration with PostgreSQL database
-
-## API Endpoints
-
-### Escalation
-
-```http
-POST /escalate
+```bash
+podman compose up -d hil-layer
+curl http://localhost:8040/health
 ```
 
-Escalates a classification for human review. Example request:
+## 📡 API Endpoints
 
+### HIL Reviews
+- **POST /escalate** - Escalate classification to human review
+- **GET /pending** - Get pending reviews
+- **POST /review/{review_id}** - Submit human review
+- **GET /reviewed** - Get reviewed items
+- **GET /stats/{categorizer_id}** - Get HIL statistics
+
+### Webhooks (v0.1)
+- **POST /webhooks/register** - Register webhook endpoint
+- **GET /webhooks** - List all webhooks
+- **DELETE /webhooks/{webhook_id}** - Unregister webhook
+- **GET /webhooks/{webhook_id}/history** - Delivery history
+- **POST /webhooks/{webhook_id}/test** - Send test payload
+
+## 🔔 Webhook Events
+
+When HIL review is escalated, webhook receives:
 ```json
 {
-  "categorizer_id": "my-classifier",
-  "text": "text to review",
-  "suggested_category": "category-a",
-  "suggested_confidence": 0.45,
-  "context": {
-    "source": "api",
-    "user_id": "12345"
-  }
+  "event": "hil.review.pending",
+  "version": "0.1",
+  "timestamp": "2025-11-02T11:58:00",
+  "review_id": "uuid-here",
+  "categorizer_id": "cat-001",
+  "text": "Review text",
+  "suggested_category": "UNKNOWN",
+  "suggested_confidence": 0.45
 }
 ```
 
-### Review Management
+## 📊 Database Schema
 
-```http
-GET /pending
+- `hil_reviews` - Pending and completed reviews
+- `training_samples` - New samples from human reviews
+- `webhooks` - Registered webhook endpoints
+- `webhook_deliveries` - Delivery history
+
+## 🔧 Configuration
+
+```env
+DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
 ```
 
-Returns pending reviews, optionally filtered by categorizer.
+## 📚 API Documentation
 
-```http
-POST /review/{review_id}
+Interactive Swagger UI: http://localhost:8040/swagger
+
+## 🚦 Health Check
+
+```bash
+curl http://localhost:8040/health
 ```
 
-Submit a human review. Example request:
+## v1.0 Roadmap
 
-```json
-{
-  "human_category": "correct-category",
-  "human_notes": "Updated due to context",
-  "reviewed_by": "expert1"
-}
-```
+- [ ] Categorizer-specific webhook filtering
+- [ ] Role-based access control
+- [ ] Webhook retry logic
+- [ ] Delivery success rate tracking
+- [ ] Batch review operations
 
-```http
-GET /reviewed
-```
-
-Returns completed reviews, optionally filtered by categorizer.
-
-### Statistics
-
-```http
-GET /stats/{categorizer_id}
-```
-
-Returns HIL statistics for a specific categorizer.
-
-### Health Check
-
-```http
-GET /health
-```
-
-Returns service health status.
-
-## Database Schema
-
-### HILReview Table
-- `id`: UUID primary key
-- `categorizer_id`: Reference to categorizer
-- `text`: Text being reviewed
-- `suggested_category`: Model's prediction
-- `suggested_confidence`: Model's confidence
-- `context`: JSON context data
-- `status`: Review status (pending/reviewed)
-- `human_category`: Human-assigned category
-- `human_notes`: Review notes
-- `reviewed_by`: Reviewer identifier
-- `reviewed_at`: Review timestamp
-- `created_at`: Creation timestamp
-
-### TrainingSample Table
-- `id`: UUID primary key
-- `categorizer_id`: Reference to categorizer
-- `text`: Sample text
-- `category`: Assigned category
-- `is_new`: New sample flag
-- `created_at`: Creation timestamp
-
-## Review Workflow
-
-1. Low-confidence predictions are escalated via `/escalate`
-2. Reviews appear in the `/pending` queue
-3. Experts review and submit decisions via `/review/{id}`
-4. Reviewed items are added to training data automatically
-5. When enough new samples accumulate, model retraining is triggered
-
-## Retraining Triggers
-
-- System tracks new training samples per categorizer
-- Default retraining threshold: 50 new samples
-- `/stats` endpoint indicates when retraining is recommended
-
-## Example Usage
-
-Escalating a review:
-
-```python
-import requests
-
-response = requests.post(
-    "http://localhost:8040/escalate",
-    json={
-        "categorizer_id": "test-categorizer",
-        "text": "ambiguous text",
-        "suggested_category": "category-a",
-        "suggested_confidence": 0.45
-    }
-)
-print(response.json())
-```
-
-Submitting a review:
-
-```python
-review_id = "uuid-from-escalation"
-response = requests.post(
-    f"http://localhost:8040/review/{review_id}",
-    json={
-        "human_category": "category-b",
-        "human_notes": "Corrected based on context",
-        "reviewed_by": "expert1"
-    }
-)
-print(response.json())
-```
-
-## Dependencies
-
-- FastAPI
-- SQLAlchemy
-- PostgreSQL
-- Pydantic
-- UUID
-
-## Integration
-
-The HIL Layer service integrates with:
-
-- Orchestrator for triggering model retraining
-- PostgreSQL for review data storage
-- API Gateway for external access
-- Other classification services (XGBoost, LLM) for receiving escalations
+---
+**Version:** 1.0.0  
+**Status:** Production Ready (v0.1 features)

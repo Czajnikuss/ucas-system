@@ -1,1 +1,0 @@
-﻿{"name":"E2E Test Final","description":"Complete validation test","training_data":[{"text":"Produkt uszkodzony","category":"JakoÅ›Ä‡"},{"text":"Dostawa opÃ³Åºniona","category":"Logistyka"},{"text":"ObsÅ‚uga pomocna","category":"ObsÅ‚uga"}],"layers":["tags"],"fallback_category":"Inne"}

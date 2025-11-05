@@ -1,110 +1,63 @@
-﻿services:
-  postgres:
-    build: ./services/postgres
-    container_name: ucas-postgres
-    environment:
-      POSTGRES_DB: ucas_db
-      POSTGRES_USER: ucas_user
-      POSTGRES_PASSWORD: ucas_password_123
-    volumes:
-      - ./volumes/postgres:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      # Check the server using the user and the actual database name. Using only -U
-      # makes pg_isready attempt to connect to a database named after the user, which
-      # fails when POSTGRES_DB != POSTGRES_USER. Use -d to target the real DB (ucas_db).
-      test: ["CMD-SHELL", "pg_isready -U ucas_user -d ucas_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    container_name: ucas-redis
-    command: redis-server --appendonly yes --requirepass ucas_redis_pass
-    volumes:
-      - ./volumes/redis:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
+networks:
+  default:
+    name: ucas_network
+    
+services:
   api-gateway:
     build: ./services/api-gateway
     container_name: ucas-api-gateway
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       REDIS_HOST: redis
       REDIS_PASSWORD: ucas_redis_pass
     ports:
-      - "8000:8000"
-    depends_on:
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
+      - 8000:8000
     restart: unless-stopped
 
-  orchestrator:
-    build: ./services/orchestrator
-    container_name: ucas-orchestrator
+  embeddings-service:
+    build: ./services/embeddings-service
+    container_name: ucas-embeddings
+    ports:
+      - 8050:8006
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evaluator:
+    build: ./services/evaluator
+    container_name: ucas-evaluator
+    depends_on:
+      llm-layer:
+        condition: service_started
+      postgres:
+        condition: service_started
     environment:
       - DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
     ports:
-      - "8001:8001"
+      - 8060:8060
+    restart: unless-stopped
     volumes:
-      - ucas-categorizers-data:/data
-      - ./config:/app/config:ro 
+      - ./config:/app/config:ro
+
+  hil-layer:
+    build: ./services/hil-layer
+    container_name: ucas-hil-layer
     depends_on:
       postgres:
         condition: service_healthy
-      tags-layer:
-        condition: service_started  
-      xgboost-layer:
-        condition: service_started  
-      llm-layer:
-        condition: service_started  
-    restart: unless-stopped
-
-  tags-layer:
-    build: ./services/tags-layer
-    container_name: ucas-tags-layer
+    environment:
+      - DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
     ports:
-      - "8010:8010"
+      - 8040:8040
     restart: unless-stopped
 
-  xgboost-layer:
-    build: ./services/xgboost-layer
-    container_name: ucas-xgboost-layer        
-    volumes:
-      - ./volumes/models:/data/models
-    ports:
-      - "8020:8020"
-    restart: unless-stopped
-
-    # Ollama - LLM Runtime
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ucas-ollama
-    volumes:
-      - ./volumes/ollama:/root/.ollama
-    ports:
-      - "11434:11434"
-    restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-
-  # LLM Layer - Classification Service
   llm-layer:
     build: ./services/llm-layer
     container_name: ucas-llm-layer
@@ -113,52 +66,148 @@
     environment:
       - OLLAMA_URL=http://ollama:11434
     ports:
-      - "8030:8030"
+      - 8030:8004
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  hil-layer:
-    build: ./services/hil-layer
-    container_name: ucas-hil-layer
-    environment:
-      - DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
-    ports:
-      - "8040:8040"
+  rag-service:
+    build: ./services/rag-service
+    container_name: ucas-rag-service
     depends_on:
-      postgres:
+      embeddings-service:
         condition: service_healthy
-    restart: unless-stopped
-
-
-
-
-  evaluator:
-    build: ./services/evaluator
-    container_name: ucas-evaluator
     ports:
-      - "8060:8060"
-    environment:
-      - DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
+      - 8070:8007
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    container_name: ucas-ollama
+    image: ollama/ollama:latest
+    ports:
+      - 11434:11434
+    restart: unless-stopped
+    volumes:
+      - ./volumes/ollama:/root/.ollama
+
+  orchestrator:
+    build: ./services/orchestrator
+    container_name: ucas-orchestrator
     depends_on:
-      postgres:
+      tags-layer:
+        condition: service_healthy
+      xgboost-layer:
         condition: service_healthy
       llm-layer:
-        condition: service_started
+        condition: service_healthy
+      rag-service:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://ucas_user:ucas_password_123@postgres:5432/ucas_db
+    ports:
+      - 8001:8001
+    restart: unless-stopped
+    volumes:
+      - ucas-categorizers-data:/data
+      - ./config:/app/config:ro
+
+  postgres:
+    build: ./services/postgres
+    container_name: ucas-postgres
+    environment:
+      POSTGRES_DB: ucas_db
+      POSTGRES_PASSWORD: ucas_password_123
+      POSTGRES_USER: ucas_user
+    healthcheck:
+      interval: 10s
+      retries: 5
+      test:
+        - CMD-SHELL
+        - pg_isready -U ucas_user -d ucas_db
+      timeout: 5s
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data
+
+  redis:
+    command: redis-server --appendonly yes --requirepass ucas_redis_pass
+    container_name: ucas-redis
+    healthcheck:
+      interval: 10s
+      retries: 5
+      test:
+        - CMD
+        - redis-cli
+        - --raw
+        - incr
+        - ping
+      timeout: 5s
+    image: redis:7-alpine
+    ports:
+      - 6379:6379
+    restart: unless-stopped
+    volumes:
+      - ./volumes/redis:/data
+
+  tags-layer:
+    build: ./services/tags-layer
+    container_name: ucas-tags-layer
+    ports:
+      - 8010:8010
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  xgboost-layer:
+    build: ./services/xgboost-layer
+    container_name: ucas-xgboost-layer
+    ports:
+      - 8020:8003
+    restart: unless-stopped
+    volumes:
+      - ./volumes/models:/data/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dashboard-admin:
+    build: ./services/dashboard-admin
+    container_name: ucas-dashboard-admin
+    depends_on:
+      - orchestrator
+    ports:
+      - 8080:8080
+    restart: unless-stopped
     volumes:
       - ./config:/app/config:ro
-    restart: unless-stopped
-  embeddings-service:
-    build: ./services/embeddings-service
-    container_name: ucas-embeddings
-    ports:
-      - "8050:8050"
-    restart: unless-stopped
 
-networks:
-  default:
-    name: ucas_network
+  dashboard-hil:
+    build: ./services/dashboard-hil
+    container_name: ucas-dashboard-hil
+    depends_on:
+      - hil-layer
+    ports:
+      - 8081:8081
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config:ro
 
 volumes:
   postgres:
   redis:
   ucas-categorizers-data:
-  

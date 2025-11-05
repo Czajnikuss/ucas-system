@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import httpx
 import redis
@@ -113,6 +113,22 @@ async def get_categorizer_status(categorizer_id: str):
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{ORCHESTRATOR_URL}/internal/categorizers/{categorizer_id}/status",
+                timeout=10.0
+            )
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Categorizer not found")
+        raise HTTPException(status_code=500, detail=f"Orchestrator error: {str(e)}")
+
+@app.delete("/api/v1/categorizers/{categorizer_id}")
+async def delete_categorizer(categorizer_id: str):
+    """Delete a categorizer"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(
+                f"{ORCHESTRATOR_URL}/internal/categorizers/{categorizer_id}",
                 timeout=10.0
             )
             response.raise_for_status()

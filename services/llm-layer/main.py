@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from logging import config
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -162,9 +162,9 @@ async def classify(request: ClassifyRequest):
     
     try:
         async with httpx.AsyncClient(timeout=10.0) as rag_client:
-            print(f"RAG: Calling orchestrator /search_similar...", file=sys.stderr, flush=True)
+            print(f"RAG: Calling rag-service /search...", file=sys.stderr, flush=True)
             rag_response = await rag_client.post(
-                "http://ucas-orchestrator:8001/search_similar",
+                "http://rag-service:8070/search",
                 json={
                     "categorizer_id": request.categorizer_id,
                     "query_text": request.text,
@@ -309,7 +309,7 @@ def parse_llm_response(response: str, valid_categories: List[str], fallback_cate
                         category = valid_cat
                         break
         
-        elif any(keyword in line for keyword in ["Confidence:", "Pewność:", "Pewnosc:", "confidence:"]):
+        elif any(keyword in line for keyword in ["Confidence:", "Pewnosc:", "Pewnosc:", "confidence:"]):
             try:
                 conf_text = line.split(":", 1)[-1].strip().replace("%", "").strip()
                 confidence = float(conf_text)
@@ -360,4 +360,4 @@ async def get_info(categorizer_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8030)
+    uvicorn.run(app, host="0.0.0.0", port=8004)

@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UCAS Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .stat-card { border-left: 4px solid #007bff; margin-bottom: 1rem; }
+        .health-ok { color: green; }
+        .health-error { color: red; }
+        body { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">🎯 UCAS Admin Dashboard</span>
+            <span class="text-white">Status: {{ health.status }}</span>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <!-- Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Total Categorizers</h6>
+                        <h2>{{ total_categorizers }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Tags Layer</h6>
+                        <h4 class="{% if health.layers and health.layers.tags == 'healthy' %}health-ok{% else %}health-error{% endif %}">
+                            {{ health.layers.tags if health.layers else 'unknown' }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">LLM Layer</h6>
+                        <h4 class="{% if health.layers and health.layers.llm == 'healthy' %}health-ok{% else %}health-error{% endif %}">
+                            {{ health.layers.llm if health.layers else 'unknown' }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Database</h6>
+                        <h4 class="{% if health.database == 'healthy' %}health-ok{% else %}health-error{% endif %}">
+                            {{ health.database if health.database else 'unknown' }}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Categorizers -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Categorizers</h4>
+            </div>
+            <div class="card-body">
+                {% if categorizers %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID</th>
+                            <th>Categories</th>
+                            <th>Training Samples</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categorizers %}
+                        <tr>
+                            <td><strong>{{ cat.name }}</strong></td>
+                            <td><code>{{ cat.categorizer_id }}</code></td>
+                            <td>
+                                {% if cat.categories %}
+                                    {% for category in cat.categories[:3] %}
+                                        <span class="badge bg-secondary">{{ category }}</span>
+                                    {% endfor %}
+                                    {% if cat.categories|length > 3 %}
+                                        <span class="badge bg-light text-dark">+{{ cat.categories|length - 3 }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ cat.training_samples }}</td>
+                            <td>{{ cat.created_at[:10] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info">No categorizers found. Create one via API.</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="http://localhost:8001/docs" target="_blank" class="btn btn-primary btn-lg">
+                📚 API Documentation (Swagger)
+            </a>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

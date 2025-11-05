@@ -109,3 +109,34 @@ Propozycja dalszych kroków:
 - Dodać testy integracyjne uruchamiające minimalny zestaw serwisów (orchestrator + postgres + redis + tags) by zweryfikować bazowe scenariusze.
 
 Plik `programmingReferences.md` znajduje się w katalogu root repo i zawiera szczegóły developerskie — sprawdź go przed edycją konfiguracji.
+
+---
+
+## Wymagane pliki lokalne i jak je utworzyć
+
+Niektóre pliki nie są commitowane (albo są generowane lokalnie) i muszą być utworzone przed uruchomieniem systemu. Poniżej krótkie instrukcje tworzenia najważniejszych z nich:
+
+- `config/secrets.yaml` — skopiuj przykładowy plik i wypełnij wartości:
+
+```powershell
+Copy-Item -Path config/secrets.yaml.example -Destination config/secrets.yaml
+# Edytuj config/secrets.yaml i ustaw hasła/URL-e
+notepad config\secrets.yaml
+```
+
+- `volumes/ollama/id_ed25519` + `id_ed25519.pub` — klucz prywatny/publiczny używany przez Ollama (jeśli wymagane):
+
+```powershell
+ssh-keygen -t ed25519 -f .\volumes\ollama\id_ed25519 -N ""
+```
+
+- Pliki inicjalizacyjne Postgres (`volumes/postgres/*`) — zwykle dostarczone w repo; jeśli nie, skopiuj szablony lub wygeneruj plik `init.sql` w `services/postgres/`.
+
+- Plik `docker-compose.yml` — główny plik orkiestracji; jeśli tworzyłeś kopie zapasowe, zachowaj je lokalnie, ale upewnij się, że `docker-compose.yml` zawiera właściwe mappingi portów i ścieżki do wolumenów.
+
+Krótki checklist przed uruchomieniem:
+- Upewnij się, że `config/secrets.yaml` istnieje i nie zawiera placeholderów.
+- Upewnij się, że klucze w `volumes/ollama/` są ustawione jeśli używasz Ollama.
+- Sprawdź `docker-compose.yml` pod kątem portów i wolumenów.
+
+Jeśli chcesz, mogę automatycznie utworzyć te pliki (np. skopiować `secrets.yaml.example` → `config/secrets.yaml` i wygenerować klucze), albo dodać przykładowy skrypt `scripts/setup_local.ps1` do repo.

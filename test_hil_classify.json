@@ -1,0 +1,5 @@
+﻿{
+  "categorizer_id": "hil-force-test",
+  "text": "completely new unrelated text that models haven't seen",
+  "strategy": "cascade"
+}

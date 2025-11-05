@@ -267,3 +267,46 @@ RETURNS BOOLEAN AS $$
     FROM curation_runs
     WHERE categorizer_id = cat_id;
 $$ LANGUAGE SQL;
+
+
+-- Webhooks table
+CREATE TABLE IF NOT EXISTS webhooks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    url VARCHAR(2048) NOT NULL UNIQUE,
+    
+    -- v1.0 placeholders
+    categorizer_filter VARCHAR(255),
+    role_required VARCHAR(50),
+    
+    is_active BOOLEAN DEFAULT TRUE,
+    last_triggered_at TIMESTAMP,
+    failed_attempts INT DEFAULT 0,
+    
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Webhook delivery history
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    webhook_id UUID REFERENCES webhooks(id) ON DELETE CASCADE,
+    
+    hil_review_id UUID NOT NULL,
+    categorizer_id VARCHAR(255) NOT NULL,
+    
+    status VARCHAR(50) DEFAULT 'pending',
+    response_code INT,
+    response_body TEXT,
+    error_message TEXT,
+    
+    created_at TIMESTAMP DEFAULT NOW(),
+    sent_at TIMESTAMP
+);
+
+CREATE INDEX idx_webhooks_active ON webhooks(is_active);
+CREATE INDEX idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id);
+CREATE INDEX idx_webhook_deliveries_status ON webhook_deliveries(status);
+
+

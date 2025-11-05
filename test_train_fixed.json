@@ -1,0 +1,11 @@
+﻿{
+  "name": "Post-Fix Test",
+  "description": "Test after database unification",
+  "training_data": [
+    {"text": "świetny produkt", "category": "pozytywne"},
+    {"text": "okropna obsługa", "category": "negatywne"},
+    {"text": "przeciętne", "category": "neutralne"}
+  ],
+  "layers": ["tags", "llm"],
+  "fallback_category": "neutralne"
+}

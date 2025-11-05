@@ -1,0 +1,4 @@
+﻿{
+  "texts": ["test embedding generation", "another test"],
+  "normalize": true
+}

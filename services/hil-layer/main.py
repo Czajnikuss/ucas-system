@@ -9,6 +9,9 @@ from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime
 import uuid
 import os
+import httpx
+import asyncio
+from webhooks import WebhookService
 
 app = FastAPI(
     title="UCAS HIL Layer",
@@ -24,7 +27,6 @@ DATABASE_URL = os.getenv(
 
 Base = declarative_base()
 
-# Define models locally (lightweight duplication for service independence)
 class Categorizer(Base):
     __tablename__ = "categorizers"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -57,8 +59,28 @@ class TrainingSample(Base):
     is_new = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Webhook(Base):
+    __tablename__ = "webhooks"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)
+    url = Column(String(2048), nullable=False)
+    description = Column(Text)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class WebhookDelivery(Base):
+    __tablename__ = "webhook_deliveries"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    webhook_id = Column(UUID(as_uuid=True), ForeignKey("webhooks.id"), nullable=False)
+    hil_review_id = Column(String(255))
+    categorizer_id = Column(String(255))
+    status = Column(String(50))
+    response_code = Column(String(10))
+    sent_at = Column(DateTime, default=datetime.utcnow)
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
@@ -66,7 +88,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
 
 class EscalateRequest(BaseModel):
     categorizer_id: str
@@ -86,7 +107,6 @@ class HILResponse(BaseModel):
     queue_position: Optional[int] = None
     message: str
 
-
 @app.get("/")
 async def root():
     return {"service": "UCAS HIL Layer", "status": "running", "version": "1.0.0"}
@@ -94,7 +114,6 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
 
 @app.post("/escalate", response_model=HILResponse)
 async def escalate_to_hil(request: EscalateRequest, db: Session = Depends(get_db)):
@@ -126,6 +145,16 @@ async def escalate_to_hil(request: EscalateRequest, db: Session = Depends(get_db
         HILReview.created_at <= hil_review.created_at
     ).count()
     
+    # Trigger webhooks
+    webhook_service = WebhookService(db)
+    await webhook_service.trigger_webhooks(
+        hil_review_id=str(hil_review.id),
+        categorizer_id=request.categorizer_id,
+        text=request.text,
+        suggested_category=request.suggested_category or "Unknown",
+        suggested_confidence=request.suggested_confidence or 0.0
+    )
+    
     return HILResponse(
         status="pending_review",
         review_id=str(hil_review.id),
@@ -133,91 +162,38 @@ async def escalate_to_hil(request: EscalateRequest, db: Session = Depends(get_db
         message="Classification escalated to human review"
     )
 
-
 @app.get("/pending")
-async def get_pending_reviews(
-    categorizer_id: Optional[str] = None,
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """Get pending HIL reviews"""
-    query = db.query(HILReview).filter(HILReview.status == 'pending')
-    
-    if categorizer_id:
-        categorizer = db.query(Categorizer).filter(
-            (Categorizer.categorizer_id == categorizer_id) |
-            (Categorizer.name == categorizer_id)
-        ).first()
+async def get_pending_reviews(db: Session = Depends(get_db)):
+    """Get all pending HIL reviews"""
+    try:
+        result = db.execute(
+            text("""
+                SELECT id, categorizer_id, text, suggested_category, 
+                       suggested_confidence, status, created_at 
+                FROM hil_reviews 
+                WHERE status = 'pending' 
+                ORDER BY created_at DESC
+            """)
+        ).fetchall()
         
-        if not categorizer:
-            raise HTTPException(status_code=404, detail="Categorizer not found")
-        
-        query = query.filter(HILReview.categorizer_id == categorizer.id)
-    
-    reviews = query.order_by(HILReview.created_at.asc()).limit(limit).all()
-    
-    return [
-        {
-            "review_id": str(r.id),
-            "categorizer_id": r.categorizer.categorizer_id,
-            "categorizer_name": r.categorizer.name,
-            "text": r.text,
-            "suggested_category": r.suggested_category,
-            "suggested_confidence": r.suggested_confidence,
-            "context": r.context,
-            "created_at": r.created_at.isoformat()
-        }
-        for r in reviews
-    ]
-
-
-@app.post("/review/{review_id}")
-async def submit_review(
-    review_id: str,
-    request: ReviewRequest,
-    db: Session = Depends(get_db)
-):
-    """Submit human review and add to training data"""
-    hil_review = db.query(HILReview).filter(HILReview.id == review_id).first()
-    
-    if not hil_review:
-        raise HTTPException(status_code=404, detail="Review not found")
-    
-    if hil_review.status != 'pending':
-        raise HTTPException(status_code=400, detail="Review already processed")
-    
-    hil_review.status = 'reviewed'
-    hil_review.human_category = request.human_category
-    hil_review.human_notes = request.human_notes
-    hil_review.reviewed_by = request.reviewed_by
-    hil_review.reviewed_at = datetime.utcnow()
-    
-    training_sample = TrainingSample(
-        categorizer_id=hil_review.categorizer_id,
-        text=hil_review.text,
-        category=request.human_category,
-        is_new=True
-    )
-    db.add(training_sample)
-    
-    db.commit()
-    
-    new_samples_count = db.query(TrainingSample).filter(
-        TrainingSample.categorizer_id == hil_review.categorizer_id,
-        TrainingSample.is_new == True
-    ).count()
-    
-    return {
-        "status": "reviewed",
-        "review_id": str(hil_review.id),
-        "human_category": request.human_category,
-        "added_to_training": True,
-        "new_samples_count": new_samples_count,
-        "retrain_threshold": 50,
-        "should_retrain": new_samples_count >= 50
-    }
-
-
+        return [
+            {
+                "review_id": str(row[0]),
+                "categorizer_id": str(row[1]),
+                "text": row[2],
+                "suggested_category": row[3],
+                "suggested_confidence": float(row[4]) if row[4] else 0.0,
+                "status": row[5],
+                "created_at": row[6].isoformat() if row[6] else None
+            }
+            for row in result
+        ]
+    except Exception as e:
+        import sys
+        import traceback
+        print(f"ERROR in /pending: {e}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        return []  # Return empty list instead of raising
 @app.get("/reviewed")
 async def get_reviewed(
     categorizer_id: Optional[str] = None,
@@ -256,7 +232,6 @@ async def get_reviewed(
         for r in reviews
     ]
 
-
 @app.get("/stats/{categorizer_id}")
 async def get_hil_stats(categorizer_id: str, db: Session = Depends(get_db)):
     """Get HIL statistics for categorizer"""
@@ -293,6 +268,93 @@ async def get_hil_stats(categorizer_id: str, db: Session = Depends(get_db)):
         "should_retrain": new_samples >= 50
     }
 
+@app.post("/webhooks/register")
+async def register_webhook(
+    name: str,
+    url: str,
+    description: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Register webhook for HIL events"""
+    from sqlalchemy.exc import IntegrityError
+    
+    try:
+        webhook_service = WebhookService(db)
+        result = webhook_service.register_webhook(name, url, description)
+        
+        return {
+            "status": "registered",
+            "webhook_id": result["webhook_id"],
+            "message": f"Webhook registered: {url}"
+        }
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=f"Webhook URL already registered: {url}")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
+@app.get("/webhooks")
+async def list_webhooks(db: Session = Depends(get_db)):
+    """List all registered webhooks"""
+    webhook_service = WebhookService(db)
+    webhooks = webhook_service.list_webhooks()
+    
+    return {
+        "count": len(webhooks),
+        "webhooks": webhooks
+    }
+
+@app.delete("/webhooks/{webhook_id}")
+async def delete_webhook(webhook_id: str, db: Session = Depends(get_db)):
+    """Delete webhook"""
+    webhook_service = WebhookService(db)
+    result = webhook_service.delete_webhook(webhook_id)
+    return result
+
+@app.get("/webhooks/{webhook_id}/history")
+async def get_webhook_history(webhook_id: str, limit: int = 50, db: Session = Depends(get_db)):
+    """Get delivery history for webhook"""
+    webhook_service = WebhookService(db)
+    history = webhook_service.get_delivery_history(webhook_id, limit)
+    
+    return {
+        "webhook_id": webhook_id,
+        "deliveries": history,
+        "total": len(history)
+    }
+
+@app.post("/webhooks/{webhook_id}/test")
+async def test_webhook(webhook_id: str, db: Session = Depends(get_db)):
+    """Send test payload to webhook"""
+    webhook_service = WebhookService(db)
+    
+    test_payload = {
+        "event": "hil.test",
+        "version": "0.1",
+        "timestamp": datetime.utcnow().isoformat(),
+        "review_id": "test-review-id",
+        "categorizer_id": "test-categorizer",
+        "text": "This is a test webhook payload",
+        "suggested_category": "Test",
+        "suggested_confidence": 0.5
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            webhook = db.query(Webhook).filter(Webhook.id == webhook_id).first()
+            if not webhook:
+                raise HTTPException(404, "Webhook not found")
+            
+            response = await client.post(webhook.url, json=test_payload)
+            
+            return {
+                "status": "sent",
+                "response_code": response.status_code,
+                "response_body": response.text[:200]
+            }
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

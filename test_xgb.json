@@ -1,0 +1,14 @@
+﻿{
+  "name": "XGBoost Test Cat",
+  "description": "Test with XGBoost enabled",
+  "training_data": [
+    {"text": "produkt świetny jakość super", "category": "pozytywne"},
+    {"text": "fatalna jakość zły produkt", "category": "negatywne"},
+    {"text": "dostawa szybka sprawna", "category": "logistyka"},
+    {"text": "opóźniona przesyłka długo czekam", "category": "logistyka"},
+    {"text": "obsługa pomocna miła", "category": "serwis"},
+    {"text": "obsługa nie pomogła", "category": "serwis"}
+  ],
+  "layers": ["tags", "xgboost", "llm"],
+  "fallback_category": "inne"
+}

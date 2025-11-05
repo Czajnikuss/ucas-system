@@ -1,1 +1,0 @@
-﻿{"name":"Product Reviews","description":"Analyze product feedback","training_data":[{"text":"Great product","category":"Positive"},{"text":"Terrible quality","category":"Negative"}],"layers":["tags","llm"],"fallback_category":"Neutral"}

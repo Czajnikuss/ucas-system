@@ -1,0 +1,16 @@
+﻿{
+  "name": "HIL Force Test",
+  "description": "Test HIL escalation",
+  "training_data": [
+    {"text": "test A", "category": "cat1"},
+    {"text": "test B", "category": "cat2"}
+  ],
+  "layers": ["tags", "llm"],
+  "hil_config": {
+    "enabled": true,
+    "tags_threshold": 0.99,
+    "xgboost_threshold": 0.99,
+    "llm_threshold": 0.99
+  },
+  "fallback_category": "unknown"
+}
