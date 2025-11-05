@@ -1,218 +1,111 @@
-# UCAS — Universal Classification & Analysis System
+# UCAS System - AI-Driven Citizen Feedback Analysis
 
-> Production-ready, multi-layer text classification system. Combines fast rules, XGBoost and an LLM reasoning layer.
+Complete microservices system for real-time classification and human-in-the-loop review of citizen feedback.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## 🏗️ Architecture
 
-## Table of Contents
-- [Project Purpose](#project-purpose)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-- [Notes](#notes)
-
-## Project Purpose
-The UCAS project provides a robust and efficient system for text classification and analysis. It integrates multiple classification layers in a cascade approach:
-
-1. **[Tags Layer](services/tags-layer/README.md)** - Fast, rule-based classification for exact and partial matches
-   - Polish language optimization
-   - TF-IDF and discriminative analysis
-   - Fast pattern matching
-
-2. **[XGBoost Layer](services/xgboost-layer/README.md)** - Machine learning classification using word embeddings
-   - Word2Vec embeddings
-   - XGBoost classifier
-   - Automatic evaluation
-
-3. **[LLM Layer](services/llm-layer/README.md)** - Advanced reasoning using large language models
-   - Few-shot learning
-   - RAG with dynamic examples
-   - GPU support
-
-4. **[HIL Layer](services/hil-layer/README.md)** - Human-in-the-loop for uncertain cases
-   - Case queueing
-   - Reviewer interface
-   - Continuous learning
-
-### Architektura Systemu
-
-System składa się z następujących komponentów:
-- **[API Gateway](services/api-gateway/README.md)** - Główny punkt wejścia, routing i autoryzacja
-- **[Orchestrator](services/orchestrator/README.md)** - Zarządzanie przepływem i koordynacja
-- **[Evaluator](services/evaluator/README.md)** - Metryki i monitoring jakości
-- Warstwy klasyfikacji (wymienione powyżej)
-- Bazy danych:
-  - PostgreSQL (dane treningowe, historia)
-  - Redis (cache, rate limiting)
-  - Ollama (modele LLM)
-
-### Key Features
-- 🚀 Multi-layer cascade classification
-- 📊 Real-time performance monitoring
-- 🔄 Continuous learning from user feedback
-- 🤝 Human-in-the-loop integration
-- 📈 Automated model evaluation
-- 🔍 Detailed classification explanations
-
-### API Documentation
-- Swagger UI: http://localhost:8001/swagger
-- ReDoc: http://localhost:8001/redoc
-- API Status: http://localhost:8001/health
-
-## Project Structure
 ```
-.
-├── docker-compose.yml
-├── README.md
-├── config/
-├── logs/
-├── scripts/
-├── services/
-│   ├── api-gateway/
-│   ├── evaluator/
-│   ├── hil-layer/
-│   ├── llm-layer/
-│   ├── orchestrator/
-│   ├── postgres/
-│   ├── redis/
-│   ├── tags-layer/
-│   └── xgboost-layer/
-├── test_data/
-├── volumes/
-└── models/
+┌─────────────────┐
+│   Categorizer   │ (AI Classification)
+│    :8001        │
+└────────┬────────┘
+         │ (Escalate)
+         ▼
+┌─────────────────┐
+│   HIL Layer     │ (Human Review)
+│    :8040        │
+└────────┬────────┘
+         │ (Webhooks)
+         ▼
+┌─────────────────┐
+│   External      │ (Client Systems)
+│   Webhooks      │
+└─────────────────┘
 ```
 
-## Installation
+## 🚀 Quick Start
 
-### Prerequisites
-- Docker Engine 24.0+
-- Docker Compose v2.0+
-- 8GB RAM minimum (16GB recommended)
-- 20GB free disk space
-
-### Quick Start
-1. Clone the repository:
 ```bash
-git clone https://github.com/Czajnikuss/ucas-system.git
-cd ucas-system
+podman compose up -d
+podman compose ps
+podman compose logs -f hil-layer
 ```
 
-2. Build and start the services:
+## 📡 Main Services
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| **Categorizer** | 8001 | AI classification |
+| **HIL Layer** | 8040 | Human review |
+| **PostgreSQL** | 5432 | Data storage |
+
+## 🔄 Data Flow
+
+1. Classification Request → Categorizer
+2. Low Confidence → Escalate to HIL
+3. Human Review → HIL Layer
+4. Webhook Event → External systems
+5. Training Update → New samples
+
+## 📚 API Documentation
+
+- **Categorizer Swagger:** http://localhost:8001/swagger
+- **HIL Swagger:** http://localhost:8040/swagger
+
+## 🔌 Webhook Integration
+
 ```bash
-docker-compose up --build
+curl -X POST "http://localhost:8040/webhooks/register?name=MySystem&url=https://myapi.com/webhook"
 ```
 
-3. Verify installation:
+Webhook payload:
+```json
+{
+  "event": "hil.review.pending",
+  "review_id": "uuid",
+  "categorizer_id": "cat-001",
+  "text": "Citizen feedback",
+  "suggested_category": "COMPLAINT",
+  "suggested_confidence": 0.42
+}
+```
+
+## 📊 Database
+
+Schema automatically created via `init.sql`:
+- Categorizers & configurations
+- Training samples with embeddings
+- Classifications & cascade
+- HIL reviews & feedback
+- Webhook endpoints & history
+
+## 🧪 Testing
+
 ```bash
-./test.ps1
+curl http://localhost:8040/health
+curl http://localhost:8040/webhooks
 ```
 
-### Configuration
-Key configuration files:
-- `config/default.json` - General system settings
-- `services/*/config.json` - Service-specific settings
-- `.env` - Environment variables (create from `.env.example`)
+## 📦 Development
 
-## Usage
-
-### Starting the System
 ```bash
-docker-compose up -d
+podman compose build
+podman compose logs -f
+podman compose down
+podman volume prune
 ```
 
-### API Examples
-1. Create a new categorizer:
-```bash
-curl -X POST http://localhost:8001/train \
-  -H "Content-Type: application/json" \
-  -d @test_data/train_cascade.json
-```
+---
+**Status:** Production Ready (v0.1)  
+**Last Updated:** Nov 2025
 
-2. Classify text:
-```bash
-curl -X POST http://localhost:8001/classify \
-  -H "Content-Type: application/json" \
-  -d '{
-    "categorizer_id": "your-categorizer-id",
-    "text": "Text to classify",
-    "strategy": "cascade"
-  }'
-```
+---
+## Rozszerzona dokumentacja i inwentaryzacja
 
-### Monitoring
-- System Health: http://localhost:8001/health
-- Metrics Dashboard: http://localhost:8001/metrics
-- Classification History: http://localhost:8001/history
+Dodano plik `programmingReferences.md` z pełną inwentaryzacją projektu: per-service lista plików, kluczowe endpointy, zmienne środowiskowe, miejsca w kodzie, gdzie zmieniać porty i ustawienia oraz lista znanych niespójności (np. mapping portów w `docker-compose.yml` vs porty w `main.py`).
 
-## Contributing
-Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Propozycja dalszych kroków:
+- Przejrzeć `programmingReferences.md` i skorygować niespójne porty (jednorodność: albo konfig w kodzie, albo w docker-compose/env).
+- Dodać testy integracyjne uruchamiające minimalny zestaw serwisów (orchestrator + postgres + redis + tags) by zweryfikować bazowe scenariusze.
 
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Service Architecture
-
-### API Gateway (Port 8001)
-- Main entry point for all requests
-- Request validation and routing
-- Rate limiting and authentication
-- Swagger documentation
-
-### Orchestrator
-- Classification workflow management
-- Result aggregation and scoring
-- Service health monitoring
-- Database interactions
-
-### Classification Layers
-1. **Tags Layer**
-   - Rule-based classification
-   - Fast exact and partial matching
-   - Regular expression support
-   
-2. **XGBoost Layer**
-   - Word2Vec embeddings
-   - XGBoost classifier
-   - Confidence scoring
-   
-3. **LLM Layer**
-   - Large Language Model reasoning
-   - Context-aware classification
-   - Explanation generation
-   
-4. **HIL Layer**
-   - Human review interface
-   - Feedback collection
-   - Training data curation
-
-### Persistence
-- PostgreSQL: Classification data and metrics
-- Redis: Caching and rate limiting
-- Volume mounts: Model storage and configs
-
-## Troubleshooting
-
-### Common Issues
-1. **Database Connection Issues**
-   ```bash
-   docker-compose down -v  # Clear volumes
-   docker-compose up -d    # Fresh start
-   ```
-
-2. **Model Loading Errors**
-   ```bash
-   docker-compose restart xgboost-layer llm-layer
-   ```
-
-3. **Permission Issues**
-   - Check volume permissions
-   - Verify database user setup
-   - Review service logs
-
-### Getting Help
-- Check service logs: `docker-compose logs [service]`
-- Review Swagger docs: http://localhost:8001/docs
-- Open an issue on GitHub
-- Run e2e tests: `./test.ps1`
+Plik `programmingReferences.md` znajduje się w katalogu root repo i zawiera szczegóły developerskie — sprawdź go przed edycją konfiguracji.
