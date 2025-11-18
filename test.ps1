@@ -120,12 +120,12 @@ $webhook2_url = "https://webhook.site/unique-$(Get-Random)"
 
 try {
     $uriBuilder1 = New-Object System.UriBuilder("http://localhost:8040/webhooks/register")
-    $uriBuilder1.Query = "name=TestHook1&url=$webhook1_url"
+    $uriBuilder1.Query = "name=TestHook1"+[char]38+"url=$webhook1_url"
     $wh1 = Invoke-RestMethod -Uri $uriBuilder1.Uri.AbsoluteUri -Method POST -ErrorAction Stop
     Write-Host "  ✅ Webhook 1: $($wh1.webhook_id) registered" -ForegroundColor Green
 
     $uriBuilder2 = New-Object System.UriBuilder("http://localhost:8040/webhooks/register")
-    $uriBuilder2.Query = "name=TestHook2&url=$webhook2_url"
+    $uriBuilder2.Query = "name=TestHook2"+ [char]38 +"url=$webhook2_url"
     $wh2 = Invoke-RestMethod -Uri $uriBuilder2.Uri.AbsoluteUri -Method POST -ErrorAction Stop
     Write-Host "  ✅ Webhook 2: $($wh2.webhook_id) registered`n" -ForegroundColor Green
     $script:test_results.passed++
@@ -418,7 +418,7 @@ if ($response_404.StatusCode -eq 404) {
 }
 
 Write-Host "[17/20] Test Invalid JSON (400/422)" -ForegroundColor Yellow
-$bad_json = '{"bad": json syntax}'
+$bad_json = '{"bad":"json syntax"}'
 $response_400 = Invoke-SafeWebRequest -Uri "http://localhost:8001/classify" -Method POST -Body $bad_json
 
 if ($response_400.StatusCode -eq 400 -or $response_400.StatusCode -eq 422) {
