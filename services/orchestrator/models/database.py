@@ -1,4 +1,4 @@
-# models/database.py
+﻿# -*- coding: utf-8 -*-
 from sqlalchemy import create_engine, Column, String, DateTime, Float, Boolean, Text, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -8,9 +8,7 @@ from datetime import datetime
 import os
 from config_loader import config
 
-
 Base = declarative_base()
-
 
 class Categorizer(Base):
     __tablename__ = "categorizers"
@@ -89,7 +87,6 @@ class CurationRun(Base):
     categorizer = relationship("Categorizer", back_populates="curation_runs")
 
 
-# W models/database.py - klasa Classification
 class Classification(Base):
     __tablename__ = "classifications"
 
@@ -99,14 +96,14 @@ class Classification(Base):
     predicted_category = Column(String(100))
     confidence = Column(Float)
     method = Column(String(50))
-    reasoning = Column(Text)  # ✅ DODANE - zgodne z SQL
+    reasoning = Column(Text)
     is_fallback = Column(Boolean, default=False)
     processing_time_ms = Column(Float)
     cascade_results = Column(JSONB)
+    llm_prompt = Column(Text, nullable=True)  # 🎯 Nowe pole zapisujące prompt LLM z uwzględnieniem RAG
     created_at = Column(DateTime, default=datetime.utcnow)
 
     categorizer = relationship("Categorizer", back_populates="classifications")
-
 
 
 class HILReview(Base):
@@ -131,14 +128,11 @@ class HILReview(Base):
 # Database connection from environment
 DATABASE_URL = config.get("database.url")
 
-
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
 def init_db():
     Base.metadata.create_all(bind=engine)
-
 
 def get_db():
     db = SessionLocal()

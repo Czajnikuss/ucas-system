@@ -8,16 +8,20 @@ import numpy as np
 import joblib
 import json
 from pathlib import Path
+from cachetools import TTLCache
+from vectorizer import text_to_regional_vector, VectorizationConfig
+import re
+import unicodedata
 
 app = FastAPI(
     title="UCAS XGBoost Layer",
-    version="1.0.0",
-    description="ML-based text classification with Word2Vec embeddings"
+    version="1.1.0",
+    description="ML-based text classification with 800D Word2Vec embeddings"
 )
 
 MODELS_DIR = Path("/data/models")
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
-models_cache = {}
+models_cache = TTLCache(maxsize=10, ttl=3600)
 
 class TrainRequest(BaseModel):
     categorizer_id: str
@@ -37,23 +41,54 @@ class ClassifyResponse(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"service": "UCAS XGBoost Layer", "status": "running", "version": "1.0.0", "trained_models": len(models_cache)}
+    return {"service": "UCAS XGBoost Layer", "status": "running", "version": "1.1.0", "trained_models": len(models_cache)}
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "trained_models": len(models_cache)}
 
-def tokenize(text: str) -> List[str]:
-    import re
-    words = re.findall(r'\b[\w]+\b', text.lower(), re.UNICODE)
-    return [w for w in words if len(w) >= 2]
+def normalize_text(text: str) -> str:
+    """
+    Usuwa znaki diakrytyczne (np. polskie 'ą', 'ć', 'ę') i zamienia na małe litery.
+    Wykorzystuje natywną dekompozycję NFD bez zewnętrznych bibliotek.
+    """
+    if not text:
+        return ""
+    
+    # Dekompozycja znaków (np. 'ą' -> 'a' + ogonek)
+    text = unicodedata.normalize('NFD', text)
+    # Filtrowanie modyfikatorów diakrytycznych (kategoria Mn - Mark, Nonspacing)
+    text = ''.join(c for c in text if unicodedata.category(c) != 'Mn')
+    
+    return text.lower()
 
-def text_to_vector(text: str, word2vec_model: Word2Vec) -> np.ndarray:
-    tokens = tokenize(text)
-    vectors = [word2vec_model.wv[token] for token in tokens if token in word2vec_model.wv]
-    if not vectors:
-        return np.zeros(word2vec_model.vector_size)
-    return np.mean(vectors, axis=0)
+def tokenize(text: str) -> list:
+    """
+    Główna funkcja tokenizująca z wbudowaną normalizacją do ASCII.
+    """
+    text = normalize_text(text)
+    # Usunięcie interpunkcji i znaków specjalnych (zostawia alfanumeryczne i spacje)
+    text = re.sub(r'[^\w\s]', '', text)
+    return text.split()
+
+def get_model(categorizer_id: str):
+    if categorizer_id in models_cache:
+        return models_cache[categorizer_id]
+        
+    model_path = MODELS_DIR / categorizer_id
+    if not model_path.exists():
+        raise ValueError("Model not found")
+        
+    xgb_model = xgb.XGBClassifier()
+    xgb_model.load_model(str(model_path / "xgboost.json"))
+    word2vec_model = Word2Vec.load(str(model_path / "word2vec.model"))
+    label_encoder = joblib.load(str(model_path / "label_encoder.pkl"))
+    
+    with open(model_path / "config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
+        
+    models_cache[categorizer_id] = (xgb_model, word2vec_model, label_encoder, config)
+    return models_cache[categorizer_id]
 
 @app.post("/train")
 async def train(request: TrainRequest):
@@ -66,6 +101,7 @@ async def train(request: TrainRequest):
         
         tokenized_texts = [tokenize(text) for text in texts]
         w2v_params = request.word2vec_params or {}
+        
         word2vec_model = Word2Vec(
             sentences=tokenized_texts,
             vector_size=w2v_params.get("vector_size", 100),
@@ -75,7 +111,8 @@ async def train(request: TrainRequest):
             epochs=w2v_params.get("epochs", 10)
         )
         
-        X = np.array([text_to_vector(text, word2vec_model) for text in texts])
+        vector_config = VectorizationConfig(vector_size=word2vec_model.vector_size)
+        X = np.array([text_to_regional_vector(tokens, word2vec_model, vector_config) for tokens in tokenized_texts])
         
         from sklearn.preprocessing import LabelEncoder
         label_encoder = LabelEncoder()
@@ -94,17 +131,17 @@ async def train(request: TrainRequest):
         )
         
         xgb_model.fit(X, y)
-        train_predictions = xgb_model.predict(X)
         from sklearn.metrics import accuracy_score
+        train_predictions = xgb_model.predict(X)
         accuracy = accuracy_score(y, train_predictions)
         
         model_path = MODELS_DIR / request.categorizer_id
-        model_path.mkdir(exist_ok=True)
+        model_path.mkdir(parents=True, exist_ok=True)
         xgb_model.save_model(str(model_path / "xgboost.json"))
         word2vec_model.save(str(model_path / "word2vec.model"))
         joblib.dump(label_encoder, str(model_path / "label_encoder.pkl"))
         
-        config = {
+        config_data = {
             "categories": label_encoder.classes_.tolist(),
             "training_samples": len(texts),
             "vector_size": word2vec_model.vector_size,
@@ -113,18 +150,18 @@ async def train(request: TrainRequest):
         }
         
         with open(model_path / "config.json", "w", encoding="utf-8") as f:
-            json.dump(config, f, ensure_ascii=False, indent=2)
+            json.dump(config_data, f, ensure_ascii=False, indent=2)
         
-        models_cache[request.categorizer_id] = (xgb_model, word2vec_model, label_encoder, config)
+        models_cache[request.categorizer_id] = (xgb_model, word2vec_model, label_encoder, config_data)
         
         return {
             "status": "trained",
             "categorizer_id": request.categorizer_id,
-            "categories": config["categories"],
+            "categories": config_data["categories"],
             "training_samples": len(texts),
             "training_accuracy": float(accuracy),
             "vector_size": word2vec_model.vector_size,
-            "vocabulary_size": len(word2vec_model.wv),
+            "dimensions_used": X.shape[1],
             "model_path": str(model_path)
         }
     except Exception as e:
@@ -132,32 +169,25 @@ async def train(request: TrainRequest):
 
 @app.post("/classify", response_model=ClassifyResponse)
 async def classify(request: ClassifyRequest):
-    if request.categorizer_id not in models_cache:
-        model_path = MODELS_DIR / request.categorizer_id
-        if not model_path.exists():
-            return ClassifyResponse(category=None, confidence=0.0, method="xgboost")
-        
-        try:
-            xgb_model = xgb.XGBClassifier()
-            xgb_model.load_model(str(model_path / "xgboost.json"))
-            word2vec_model = Word2Vec.load(str(model_path / "word2vec.model"))
-            label_encoder = joblib.load(str(model_path / "label_encoder.pkl"))
-            with open(model_path / "config.json", "r", encoding="utf-8") as f:
-                config = json.load(f)
-            models_cache[request.categorizer_id] = (xgb_model, word2vec_model, label_encoder, config)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to load: {str(e)}")
-    
-    xgb_model, word2vec_model, label_encoder, config = models_cache[request.categorizer_id]
+    try:
+        xgb_model, word2vec_model, label_encoder, config = get_model(request.categorizer_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Model not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load: {str(e)}")
     
     try:
-        text_vector = text_to_vector(request.text, word2vec_model)
+        vector_config = VectorizationConfig(vector_size=word2vec_model.vector_size)
+        tokens = tokenize(request.text)
+        text_vector = text_to_regional_vector(tokens, word2vec_model, vector_config)
         X = text_vector.reshape(1, -1)
+        
         probabilities = xgb_model.predict_proba(X)[0]
         predicted_idx = np.argmax(probabilities)
         category = label_encoder.inverse_transform([predicted_idx])[0]
         confidence = float(probabilities[predicted_idx])
         all_probs = {label_encoder.inverse_transform([i])[0]: float(p) for i, p in enumerate(probabilities)}
+        
         return ClassifyResponse(category=category, confidence=confidence, probabilities=all_probs, method="xgboost")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Classification failed: {str(e)}")

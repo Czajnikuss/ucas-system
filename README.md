@@ -1,142 +1,74 @@
-# UCAS System - AI-Driven Citizen Feedback Analysis
+# UCAS - Universal Classification & Analysis System
 
-Complete microservices system for real-time classification and human-in-the-loop review of citizen feedback.
+UCAS to kaskadowy system klasyfikacji tekstów oparty na architekturze mikroserwisów. Zaprojektowany do przetwarzania zapytań systemowych (np. zgłoszeń Helpdesk) z wykorzystaniem wielu warstw decyzyjnych, od szybkich reguł, przez modele ML, aż po zaawansowane modele LLM ze wsparciem RAG.
 
-## 🏗️ Architecture
+## 🏗 Architektura
 
-```
-┌─────────────────┐
-│   Categorizer   │ (AI Classification)
-│    :8001        │
-└────────┬────────┘
-         │ (Escalate)
-         ▼
-┌─────────────────┐
-│   HIL Layer     │ (Human Review)
-│    :8040        │
-└────────┬────────┘
-         │ (Webhooks)
-         ▼
-┌─────────────────┐
-│   External      │ (Client Systems)
-│   Webhooks      │
-└─────────────────┘
-```
+System składa się z niezależnych kontenerów Dockerowych komunikujących się przez REST API:
 
-## 🚀 Quick Start
+* **API Gateway (`:8000`)**: Główny punkt wejścia. Trasuje żądania do Orchestratora.
+* **Orchestrator (`:8001`)**: Mózg kaskady. Zarządza przepływem żądań (Tags -> XGBoost -> LLM), zapisuje historię w bazie PostgreSQL i obsługuje logikę persistence (odtwarzanie modeli po restarcie).
+* **Tags Layer (`:8010`)**: Najszybsza warstwa oparta na słowach kluczowych i wyrażeniach regularnych.
+* **XGBoost Layer (`:8020`)**: Warstwa ML. Używa TF-IDF i algorytmu XGBoost do szybkiej klasyfikacji wzorców.
+* **LLM Layer (`:8030`)**: Warstwa rozumienia języka naturalnego (Ollama). Przetwarza skomplikowane przypadki, korzystając z profesjonalnego polskiego promptu i kontekstu RAG.
+* **RAG Service (`:8070`)**: Baza wektorowa (`pgvector`) dostarczająca kontekst z historycznych przykładów do warstwy LLM.
+* **Embeddings Service (`:8050`)**: Lokalny model transformatorowy generujący wektory (osadzenia) dla RAG i Evaluatora (obsługuje paczkowanie zapytań).
+* **Evaluator (`:8060`)**: Worker w tle. Analizuje jakość danych treningowych obliczając odległość kosinusową (`numpy`) próbek od centroidu (środka ciężkości) ich klasy. Automatycznie eliminuje szum.
+* **PostgreSQL**: Baza danych (modele, historia klasyfikacji, pełne prompty LLM, dane treningowe).
+* **Dashboard UI (`:8501`)**: Interfejs zarządzania (Streamlit).
 
-```bash
-podman compose up -d
-podman compose ps
-podman compose logs -f hil-layer
-```
+## 🚀 Kluczowe Funkcjonalności
 
-## 📡 Main Services
+1.  **Kaskada Decyzyjna (Cascade)**: System próbuje sklasyfikować tekst najtańszą i najszybszą metodą. Jeśli Tags i XGBoost zwrócą niską pewność (Confidence), żądanie trafia do LLM.
+2.  **Zarządzanie Jakością (Evaluator)**: Przeliczanie jakości wektorowej próbek w locie. Próbki poniżej zdefiniowanego progu są archiwizowane, co chroni model przed zjawiskiem *Data Poisoning*.
+3.  **Management Dashboard (UI)**:
+    * **Zarządzanie modelami**: Podgląd i usuwanie kategoryzatorów.
+    * **Edytor Danych**: Ręczna modyfikacja, import z plików CSV (Tryby Overwrite / Append) oraz natychmiastowe przeliczanie całego potoku kaskady.
+    * **Test API**: Interaktywne testowanie strategii (`cascade`, `llm`, `xgboost`, `tags`) z pełnym zrzutem JSON i podglądem wygenerowanego Promptu LLM z wstrzykniętym RAG.
+    * **Statystyki**: Analiza czasu procesowania, dystrybucji warstw i przegląd ostatnich 50 zapytań prosto z bazy danych.
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| **Categorizer** | 8001 | AI classification |
-| **HIL Layer** | 8040 | Human review |
-| **PostgreSQL** | 5432 | Data storage |
+## 🛠 Wymagania
 
-## 🔄 Data Flow
+* Docker & Docker Compose (V2)
+* Powershell (do skryptów testowych)
+* Minimum 8GB RAM (Zalecane 16GB dla modeli LLM ładowanych do pamięci)
 
-1. Classification Request → Categorizer
-2. Low Confidence → Escalate to HIL
-3. Human Review → HIL Layer
-4. Webhook Event → External systems
-5. Training Update → New samples
+## ⚙️ Uruchomienie
 
-## 📚 API Documentation
-
-- **Categorizer Swagger:** http://localhost:8001/swagger
-- **HIL Swagger:** http://localhost:8040/swagger
-
-## 🔌 Webhook Integration
-
-```bash
-curl -X POST "http://localhost:8040/webhooks/register?name=MySystem&url=https://myapi.com/webhook"
-```
-
-Webhook payload:
-```json
-{
-  "event": "hil.review.pending",
-  "review_id": "uuid",
-  "categorizer_id": "cat-001",
-  "text": "Citizen feedback",
-  "suggested_category": "COMPLAINT",
-  "suggested_confidence": 0.42
-}
-```
-
-## 📊 Database
-
-Schema automatically created via `init.sql`:
-- Categorizers & configurations
-- Training samples with embeddings
-- Classifications & cascade
-- HIL reviews & feedback
-- Webhook endpoints & history
-
-## 🧪 Testing
-
-```bash
-curl http://localhost:8040/health
-curl http://localhost:8040/webhooks
-```
-
-## 📦 Development
-
-```bash
-podman compose build
-podman compose logs -f
-podman compose down
-podman volume prune
-```
-
----
-**Status:** Production Ready (v0.1)  
-**Last Updated:** Nov 2025
-
----
-## Rozszerzona dokumentacja i inwentaryzacja
-
-Dodano plik `programmingReferences.md` z pełną inwentaryzacją projektu: per-service lista plików, kluczowe endpointy, zmienne środowiskowe, miejsca w kodzie, gdzie zmieniać porty i ustawienia oraz lista znanych niespójności (np. mapping portów w `docker-compose.yml` vs porty w `main.py`).
-
-Propozycja dalszych kroków:
-- Przejrzeć `programmingReferences.md` i skorygować niespójne porty (jednorodność: albo konfig w kodzie, albo w docker-compose/env).
-- Dodać testy integracyjne uruchamiające minimalny zestaw serwisów (orchestrator + postgres + redis + tags) by zweryfikować bazowe scenariusze.
-
-Plik `programmingReferences.md` znajduje się w katalogu root repo i zawiera szczegóły developerskie — sprawdź go przed edycją konfiguracji.
-
----
-
-## Wymagane pliki lokalne i jak je utworzyć
-
-Niektóre pliki nie są commitowane (albo są generowane lokalnie) i muszą być utworzone przed uruchomieniem systemu. Poniżej krótkie instrukcje tworzenia najważniejszych z nich:
-
-- `config/secrets.yaml` — skopiuj przykładowy plik i wypełnij wartości:
-
+1. Klonowanie repozytorium i uruchomienie środowiska:
 ```powershell
-Copy-Item -Path config/secrets.yaml.example -Destination config/secrets.yaml
-# Edytuj config/secrets.yaml i ustaw hasła/URL-e
-notepad config\secrets.yaml
-```
+docker compose up -d
 
-- `volumes/ollama/id_ed25519` + `id_ed25519.pub` — klucz prywatny/publiczny używany przez Ollama (jeśli wymagane):
+2. Pierwszy trening (przykład przez skrypt lub z UI):
 
-```powershell
-ssh-keygen -t ed25519 -f .\volumes\ollama\id_ed25519 -N ""
-```
+PowerShell
 
-- Pliki inicjalizacyjne Postgres (`volumes/postgres/*`) — zwykle dostarczone w repo; jeśli nie, skopiuj szablony lub wygeneruj plik `init.sql` w `services/postgres/`.
+.\test_xgb_800.ps1
 
-- Plik `docker-compose.yml` — główny plik orkiestracji; jeśli tworzyłeś kopie zapasowe, zachowaj je lokalnie, ale upewnij się, że `docker-compose.yml` zawiera właściwe mappingi portów i ścieżki do wolumenów.
+3. Dostęp do usług:
 
-Krótki checklist przed uruchomieniem:
-- Upewnij się, że `config/secrets.yaml` istnieje i nie zawiera placeholderów.
-- Upewnij się, że klucze w `volumes/ollama/` są ustawione jeśli używasz Ollama.
-- Sprawdź `docker-compose.yml` pod kątem portów i wolumenów.
+Management UI: http://localhost:8501
 
-Jeśli chcesz, mogę automatycznie utworzyć te pliki (np. skopiować `secrets.yaml.example` → `config/secrets.yaml` i wygenerować klucze), albo dodać przykładowy skrypt `scripts/setup_local.ps1` do repo.
+API Gateway: http://localhost:8000
+
+📡 API Endpoints (Gateway)
+POST /classify - Główny endpoint klasyfikujący. Opcje strategii: cascade, fastest, all, llm, xgboost, tags. Obsługuje flagę return_prompt dla trybu debugowania.
+
+POST /train - Buduje lub nadpisuje kategoryzator we wszystkich warstwach.
+
+GET /categorizers - Zwraca listę załadowanych modeli.
+
+DELETE /categorizers/{id} - Kasuje model z pamięci i bazy.
+
+🧠 Mechanika Jakości Danych (Quality Scorer)
+Evaluator działa na podstawie logiki wektorowej:
+
+Pobiera do 1000 aktywnych próbek referencyjnych dla danej kategorii.
+
+Odpytuje Embeddings Service o paczkę wektorów.
+
+Wylicza Centroid (średni wektor w przestrzeni).
+
+Próbki oceniane są na podstawie odległości od centroidu. Próg odcięcia tła (baseline) dla Sentence Transformers to standardowo 0.35.
+
+Wynik jest normalizowany do przedziału [0.0, 1.0]. W przypadku awarii API wektorowego działa algorytm heurystyczny zabezpieczający kolejkę.

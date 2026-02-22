@@ -4,43 +4,38 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
-from collections import Counter
 import numpy as np
 from unidecode import unidecode
 import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 app = FastAPI(
     title="UCAS Tags Layer",
-    version="3.0.0",
-    description="Multi-language keyword-based categorization (Polish optimized)",
+    version="3.1.0",
+    description="Multi-language keyword categorization using TF-ICF (Category Level TF-IDF)",
     docs_url="/swagger"
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Polish stopwords
-POLISH_STOPWORDS = set([
-    'i', 'w', 'na', 'z', 'do', 'o', 'a', 'że', 'się', 'nie', 'jest', 'was', 'być',
+# Rozszerzona lista stop words
+POLISH_STOPWORDS = {
+    'i', 'w', 'na', 'z', 'do', 'o', 'a', 'ze', 'sie', 'nie', 'jest', 'was', 'byc',
     'to', 'ja', 'he', 'jak', 'dla', 'po', 'ale', 'od', 'za', 'przez', 'przy',
-    'lub', 'oraz', 'tylko', 'może', 'gdzie', 'kiedy', 'który', 'ta', 'ten', 'tego',
-    'bardzo', 'może', 'mnie', 'mi', 'sobie', 'tym', 'też', 'już', 'co', 'czy'
-])
+    'lub', 'oraz', 'tylko', 'moze', 'gdzie', 'kiedy', 'ktory', 'ta', 'ten', 'tego',
+    'bardzo', 'mnie', 'mi', 'sobie', 'tym', 'tez', 'juz', 'co', 'czy', 'ze', 'sa',
+    'mimo', 'ze', 'jak', 'brak', 'bez'
+}
 
-# Storage
 categorizer_keywords: Dict[str, Dict[str, List[str]]] = {}
-categorizer_stats: Dict[str, Dict] = {}
 categorizer_configs: Dict[str, Dict] = {}
 
 class TrainRequest(BaseModel):
     categorizer_id: str
     training_data: List[Dict[str, str]]
-    max_keywords: int = 10
+    max_keywords: int = 12
     min_keyword_length: int = 3
-    normalize_text: bool = True  # Convert ą→a, ł→l for better matching
+    normalize_text: bool = True
     use_polish_stopwords: bool = True
 
 class ClassifyRequest(BaseModel):
@@ -51,189 +46,109 @@ class ClassifyResponse(BaseModel):
     category: Optional[str]
     confidence: float
     matched_keywords: List[str] = []
-    original_keywords: List[str] = []  # Before normalization
     all_matches: Dict[str, List[str]] = {}
     method: str = "tags"
 
 def normalize_polish_text(text: str, should_normalize: bool = True) -> str:
-    """
-    Normalize Polish text for better matching
-    ą→a, ę→e, ć→c, ł→l, ń→n, ó→o, ś→s, ź/ż→z
-    """
     if not should_normalize:
         return text
-    return unidecode(text)
-
-def tokenize_text(text: str, min_length: int = 3) -> List[str]:
-    """Tokenize supporting Polish characters"""
-    # Pattern includes Polish diacritics
-    words = re.findall(r'\b[\w]+\b', text.lower(), re.UNICODE)
-    return [w for w in words if len(w) >= min_length]
+    return unidecode(text).lower()
 
 @app.get("/")
 async def root():
     return {
         "service": "UCAS Tags Layer",
         "status": "running",
-        "version": "3.0.0",
-        "features": ["polish_stopwords", "text_normalization", "utf8_support"],
-        "trained_categorizers": len(categorizer_keywords)
+        "strategy": "TF-ICF",
+        "version": "3.1.0"
     }
 
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "healthy",
-        "trained_categorizers": len(categorizer_keywords),
-        "polish_support": True
-    }
-
-def calculate_discriminative_score(word, category_freq, all_category_freqs):
-    """Calculate category uniqueness score"""
-    total_freq = sum(all_category_freqs.values())
-    if total_freq == 0:
-        return 0
-    
-    category_ratio = category_freq / total_freq
-    num_categories_with_word = sum(1 for freq in all_category_freqs.values() if freq > 0)
-    diversity_penalty = 1.0 / num_categories_with_word
-    
-    return category_ratio * diversity_penalty
+    return {"status": "healthy", "trained_categorizers": len(categorizer_keywords)}
 
 @app.post("/train")
 async def train(request: TrainRequest):
-    """
-    Train with full Polish language support
-    """
     try:
-        # Store config
         categorizer_configs[request.categorizer_id] = {
             "normalize_text": request.normalize_text,
             "use_polish_stopwords": request.use_polish_stopwords,
             "max_keywords": request.max_keywords
         }
         
-        # Normalize texts
-        texts = [sample["text"] for sample in request.training_data]
-        categories = [sample["category"] for sample in request.training_data]
+        # Agregacja tekstów per kategoria (Klucz do TF-ICF)
+        category_corpus = {}
         
-        if request.normalize_text:
-            texts_normalized = [normalize_polish_text(t) for t in texts]
-        else:
-            texts_normalized = texts
-        
-        unique_categories = list(set(categories))
-        
-        # Word frequency analysis
-        global_word_freq = Counter()
-        category_word_freq = {cat: Counter() for cat in unique_categories}
-        
-        for text_norm, category in zip(texts_normalized, categories):
-            words = tokenize_text(text_norm, request.min_keyword_length)
+        for sample in request.training_data:
+            cat = sample["category"]
+            txt = sample["text"]
             
-            # Filter stopwords
-            if request.use_polish_stopwords:
-                words = [w for w in words if w not in POLISH_STOPWORDS]
-            
-            global_word_freq.update(words)
-            category_word_freq[category].update(words)
+            if request.normalize_text:
+                txt = normalize_polish_text(txt)
+            else:
+                txt = txt.lower()
+                
+            if cat not in category_corpus:
+                category_corpus[cat] = []
+            category_corpus[cat].append(txt)
+
+        unique_categories = list(category_corpus.keys())
+        
+        # Łączymy wszystkie sample w jeden ogromny string dla każdej kategorii
+        corpus_documents = [" ".join(category_corpus[cat]) for cat in unique_categories]
+        
+        stopwords_list = list(POLISH_STOPWORDS) if request.use_polish_stopwords else None
+
+        vectorizer = TfidfVectorizer(
+            max_features=2000,
+            ngram_range=(1, 2),
+            stop_words=stopwords_list,
+            lowercase=True,
+            token_pattern=r'\b[a-zA-Z0-9_]{' + str(request.min_keyword_length) + r',}\b',
+            min_df=1
+        )
+        
+        # Obliczenie TF-IDF na poziomie całych kategorii
+        tfidf_matrix = vectorizer.fit_transform(corpus_documents)
+        feature_names = vectorizer.get_feature_names_out()
         
         keywords_by_category = {}
         
-        for category in unique_categories:
-            category_texts = [t for t, c in zip(texts_normalized, categories) if c == category]
+        for i, category in enumerate(unique_categories):
+            # Wyciągamy wiersz macierzy dla konkretnej kategorii
+            row = tfidf_matrix.getrow(i).toarray()[0]
             
-            if len(category_texts) < 1:
-                continue
+            # Tworzymy pary (słowo, score) i sortujemy malejąco
+            word_scores = [(feature_names[idx], score) for idx, score in enumerate(row) if score > 0]
+            word_scores.sort(key=lambda x: x[1], reverse=True)
             
-            try:
-                # Custom stopwords
-                stopwords_to_use = list(POLISH_STOPWORDS) if request.use_polish_stopwords else None
-                
-                vectorizer = TfidfVectorizer(
-                    max_features=request.max_keywords * 3,
-                    ngram_range=(1, 2),
-                    stop_words=stopwords_to_use,
-                    lowercase=True,
-                    min_df=1,
-                    token_pattern=r'\b[\w]+\b'  # Support Unicode
-                )
-                
-                tfidf_matrix = vectorizer.fit_transform(category_texts)
-                feature_names = vectorizer.get_feature_names_out()
-                avg_tfidf = np.mean(tfidf_matrix.toarray(), axis=0)
-                
-                word_scores = {}
-                for word, tfidf_score in zip(feature_names, avg_tfidf):
-                    word_freq = category_word_freq[category][word]
-                    
-                    all_freqs = {cat: category_word_freq[cat][word] for cat in unique_categories}
-                    discriminative = calculate_discriminative_score(word, word_freq, all_freqs)
-                    
-                    freq_score = word_freq / max(global_word_freq.values())
-                    
-                    combined_score = (
-                        tfidf_score * 0.5 +
-                        discriminative * 0.3 +
-                        freq_score * 0.2
-                    )
-                    
-                    word_scores[word] = {
-                        'combined': combined_score,
-                        'tfidf': tfidf_score,
-                        'discriminative': discriminative,
-                        'frequency': word_freq
-                    }
-                
-                sorted_words = sorted(word_scores.items(), key=lambda x: x[1]['combined'], reverse=True)
-                top_keywords = [word for word, scores in sorted_words[:request.max_keywords]]
-                keywords_by_category[category] = top_keywords
-                
-                if request.categorizer_id not in categorizer_stats:
-                    categorizer_stats[request.categorizer_id] = {}
-                
-                categorizer_stats[request.categorizer_id][category] = {
-                    'samples': len(category_texts),
-                    'keyword_scores': {k: v for k, v in sorted_words[:request.max_keywords]}
-                }
-                
-            except Exception as e:
-                word_freq = category_word_freq[category]
-                top_keywords = [word for word, freq in word_freq.most_common(request.max_keywords)]
-                keywords_by_category[category] = top_keywords
-        
+            # Pobieramy top N słów kluczowych
+            top_keywords = [word for word, score in word_scores[:request.max_keywords]]
+            keywords_by_category[category] = top_keywords
+
         categorizer_keywords[request.categorizer_id] = keywords_by_category
         
         return {
             "status": "trained",
             "categorizer_id": request.categorizer_id,
-            "categories": list(keywords_by_category.keys()),
+            "categories": unique_categories,
             "keywords": keywords_by_category,
-            "training_samples": len(texts),
-            "config": {
-                "normalized": request.normalize_text,
-                "polish_stopwords": request.use_polish_stopwords
-            },
-            "extraction_method": "multi-metric with Polish support"
+            "training_samples": len(request.training_data),
+            "extraction_method": "TF-ICF"
         }
         
     except Exception as e:
+        logger.error(f"Training failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
 @app.post("/classify", response_model=ClassifyResponse)
 async def classify(request: ClassifyRequest):
-    """Classify with Polish text normalization"""
     if request.categorizer_id not in categorizer_keywords:
-        return ClassifyResponse(
-            category=None,
-            confidence=0.0,
-            method="tags"
-        )
+        return ClassifyResponse(category=None, confidence=0.0)
     
     config = categorizer_configs.get(request.categorizer_id, {})
     keywords_map = categorizer_keywords[request.categorizer_id]
     
-    # Normalize input text
     text_to_match = normalize_polish_text(request.text, config.get("normalize_text", True))
     
     category_scores = {}
@@ -244,31 +159,32 @@ async def classify(request: ClassifyRequest):
         score = 0
         
         for keyword in keywords:
-            pattern = r'\b' + re.escape(keyword.lower()) + r'\b'
-            if re.search(pattern, text_to_match.lower(), re.UNICODE):
+            # Wyszukiwanie dokładnych fraz (uwzględnia n-gramy ze spacjami)
+            pattern = r'\b' + re.escape(keyword) + r'\b'
+            if re.search(pattern, text_to_match):
                 matches.append(keyword)
-                score += len(keyword.split()) * 2
+                # Dłuższe n-gramy punktują mocniej (2 słowa = waga 2)
+                score += len(keyword.split()) 
         
         if matches:
             category_scores[category] = score
             category_matches[category] = matches
     
     if not category_scores:
-        return ClassifyResponse(
-            category=None,
-            confidence=0.0,
-            all_matches={},
-            method="tags"
-        )
+        return ClassifyResponse(category=None, confidence=0.0)
     
+    # Kategoria z największą liczbą trafień wygrywa
     best_category = max(category_scores.items(), key=lambda x: x[1])[0]
+    
+    # Prosty wzór pewności: zależny od liczby i długości trafień (max cap na 0.99)
+    raw_score = category_scores[best_category]
+    confidence = min(0.6 + (raw_score * 0.1), 0.99)
     
     return ClassifyResponse(
         category=best_category,
-        confidence=1.0,
+        confidence=confidence,
         matched_keywords=category_matches[best_category],
-        all_matches=category_matches,
-        method="tags"
+        all_matches=category_matches
     )
 
 @app.get("/categorizers/{categorizer_id}/keywords")
@@ -276,20 +192,13 @@ async def get_keywords(categorizer_id: str):
     if categorizer_id not in categorizer_keywords:
         raise HTTPException(status_code=404, detail="Categorizer not trained")
     
-    response = {
+    return {
         "categorizer_id": categorizer_id,
-        "keywords": categorizer_keywords[categorizer_id],
-        "config": categorizer_configs.get(categorizer_id, {})
+        "keywords": categorizer_keywords[categorizer_id]
     }
-    
-    if categorizer_id in categorizer_stats:
-        response["statistics"] = categorizer_stats[categorizer_id]
-    
-    return response
 
 @app.post("/restore")
 async def restore_categorizer(request: dict):
-    """Restore categorizer keywords from persistence without retraining"""
     categorizer_id = request.get("categorizer_id")
     keywords = request.get("keywords", {})
     categories = request.get("categories", [])
@@ -297,25 +206,8 @@ async def restore_categorizer(request: dict):
     if not categorizer_id:
         raise HTTPException(status_code=400, detail="categorizer_id required")
     
-    # Restore in-memory state
     categorizer_keywords[categorizer_id] = keywords
-    
-    # Calculate stats
-    categorizer_stats[categorizer_id] = {
-        cat: len(keywords.get(cat, []))
-        for cat in categories
-    }
-    
-    logger.info(f"✓ Restored categorizer {categorizer_id} - {len(keywords)} categories")
-    
-    return {
-        "status": "restored",
-        "categorizer_id": categorizer_id,
-        "categories": categories,
-        "keywords_count": {cat: len(keywords.get(cat, [])) for cat in categories}
-    }
-
-
+    return {"status": "restored", "categorizer_id": categorizer_id}
 
 if __name__ == "__main__":
     import uvicorn
