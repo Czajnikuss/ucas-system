@@ -11,6 +11,25 @@ from config_loader import config
 
 router = APIRouter()
 
+
+async def _embed_query(text: str):
+    """Embedding zapytania z embeddings-service (cechy dla xgboost w trybie transfer learning).
+    Zwraca liste floatow albo None gdy sie nie uda (xgboost-layer ma wtedy fallback Word2Vec)."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.post(
+                f"{config.get('orchestrator.layers.embeddings.url')}/embed",
+                json={"texts": [text], "normalize": True},
+            )
+            if r.status_code == 200:
+                embs = r.json().get("embeddings", [])
+                if embs:
+                    return embs[0]
+    except Exception:
+        pass
+    return None
+
+
 class ClassifyRequest(BaseModel):
     categorizer_id: str
     text: str
@@ -97,7 +116,9 @@ async def classify_single_layer(categorizer_id: str, text: str, layer: str, cont
             payload = {"categorizer_id": categorizer_id, "text": text}
             if layer == "llm" and context:
                 payload["context"] = context
-                
+            if layer == "xgboost":
+                payload["embedding"] = await _embed_query(text)
+
             response = await client.post(
                 f"{config.get(f'orchestrator.layers.{layer}.url')}/classify",
                 json=payload,
@@ -145,6 +166,12 @@ async def classify_cascade(categorizer_id: str, text: str, db: Session, context:
     hil_enabled_in_layers = "hil" in configured_layers
     hil_enabled_in_config = hil_config.get('enabled', True)
     should_check_hil = hil_enabled_in_layers and hil_enabled_in_config
+
+    # Tags decyduje na PEWNYM trafieniu slow kluczowych. Jest to bezpieczne, bo filtr ICF
+    # w tags-layer usuwa slowa neutralne (np. "aplikacja"), wiec falszywe trafienia juz nie
+    # wystepuja. Gdy tags nie jest pewne -> kaskada leci dalej: xgboost (pretrenowane
+    # embeddingi) -> llm -> HIL. Empirycznie tags lapie przypadki slowo-jednoznaczne (np. login),
+    # ktore xgboost czasem myli, a xgboost lapie reszte.
     
     async with httpx.AsyncClient() as client:
         # Layer 1: Tags
@@ -167,10 +194,11 @@ async def classify_cascade(categorizer_id: str, text: str, db: Session, context:
         # Layer 2: XGBoost
         if "xgboost" in configured_layers:
             try:
+                xgb_emb = await _embed_query(text)
                 response = await client.post(
                     f"{config.get('orchestrator.layers.xgboost.url')}/classify",
-                    json={"categorizer_id": categorizer_id, "text": text},
-                    timeout=10.0
+                    json={"categorizer_id": categorizer_id, "text": text, "embedding": xgb_emb},
+                    timeout=15.0
                 )
                 response.raise_for_status() # 🎯 Krytyczne
                 xgb_result = response.json()
@@ -241,9 +269,10 @@ async def classify_cascade(categorizer_id: str, text: str, db: Session, context:
 
 async def classify_all(categorizer_id: str, text: str) -> Dict:
     async with httpx.AsyncClient() as client:
+        xgb_emb = await _embed_query(text)
         tasks = [
             client.post(f"{config.get('orchestrator.layers.tags.url')}/classify", json={"categorizer_id": categorizer_id, "text": text}, timeout=5.0),
-            client.post(f"{config.get('orchestrator.layers.xgboost.url')}/classify", json={"categorizer_id": categorizer_id, "text": text}, timeout=10.0),
+            client.post(f"{config.get('orchestrator.layers.xgboost.url')}/classify", json={"categorizer_id": categorizer_id, "text": text, "embedding": xgb_emb}, timeout=15.0),
             client.post(f"{config.get('orchestrator.layers.llm.url')}/classify", json={"categorizer_id": categorizer_id, "text": text}, timeout=60.0)
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)

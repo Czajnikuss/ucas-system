@@ -1,15 +1,24 @@
 # XGBoost Layer Service
 
-The XGBoost Layer is a machine learning service that provides text classification capabilities using XGBoost models combined with Word2Vec embeddings. It offers both training and inference endpoints with support for multiple independent categorizers.
+The XGBoost Layer is a machine learning service for text classification. It runs XGBoost on **pretrained multilingual sentence-embeddings** (transfer learning) supplied by the Embeddings Service, with a **Word2Vec fallback** when embeddings are unavailable. Supports multiple independent categorizers, training and inference.
 
 ## Features
 
-- Training text classifiers with XGBoost and Word2Vec
+- Training text classifiers with XGBoost on pretrained embeddings (Word2Vec fallback)
 - Real-time text classification with confidence scores
 - Support for multiple categorizers
 - Model persistence and caching
 - Configurable model parameters
 - Health monitoring
+
+## Feature modes
+
+The classifier picks the feature representation automatically:
+
+- **`embeddings` (default, transfer learning)** — when the Orchestrator supplies pretrained multilingual embeddings (384D, from the Embeddings Service) via the optional `embeddings` field on `/train` and `embedding` on `/classify`. Much stronger on small datasets and any language — the semantic knowledge comes from a model pretrained on billions of words, so XGBoost only has to learn the decision boundary.
+- **`word2vec` (fallback)** — when no embeddings are provided, a Word2Vec model is trained from scratch on the categorizer's own samples (weaker on small corpora; kept for backward compatibility).
+
+The active mode is recorded in `config.json` as `feature_mode`.
 
 ## API Endpoints
 
@@ -93,9 +102,9 @@ Word2Vec parameters:
 
 Models are stored in `/data/models/{categorizer_id}/` with the following structure:
 - `xgboost.json`: XGBoost model file
-- `word2vec.model`: Word2Vec embeddings
 - `label_encoder.pkl`: Category label encoder
-- `config.json`: Model configuration and metadata
+- `config.json`: Model configuration and metadata (incl. `feature_mode`)
+- `word2vec.model`: Word2Vec embeddings — **only in `word2vec` fallback mode**
 
 ## Example Usage
 

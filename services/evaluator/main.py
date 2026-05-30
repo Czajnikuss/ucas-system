@@ -156,8 +156,8 @@ async def background_scoring_worker():
     batch_size = config.get('quality.background_scoring.batch_size', 5)
     
     while background_task_running:
+        db = SessionLocal()
         try:
-            db = SessionLocal()
             categorizers = db.query(Categorizer).all()
             
             for categorizer in categorizers:
@@ -200,10 +200,12 @@ async def background_scoring_worker():
                         
                 except Exception as e:
                     db.rollback()
-            db.close()
-        except Exception as e:
+        except Exception:
+            # Blad na poziomie cyklu (np. chwilowa utrata polaczenia) — sesja zamknieta w finally
             pass
-        
+        finally:
+            db.close()
+
         await asyncio.sleep(interval)
 
 # ============================================
@@ -404,7 +406,7 @@ async def get_curation_status(categorizer_id: str, db: Session = Depends(get_db)
         return CurationStatusResponse(
             categorizer_id=categorizer_id,
             unscored_count=unscored_count,
-            needs_curation=(unscored_count >= 50),
+            needs_curation=(unscored_count >= config.get('quality.curation.trigger_threshold', 50)),
             total_active_samples=total_active,
             avg_quality_score=avg_quality
         )

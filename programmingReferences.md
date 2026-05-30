@@ -197,10 +197,10 @@ Powiedz, co chcesz żebym zrobił dalej.
 
 ## Aktualna struktura katalogów i plików (kod)
 
-Poniżej znajduje się zaktualizowane drzewo katalogów i plików związanych z kodem w repozytorium (lista wygenerowana automatycznie z repo). Jeśli czegoś brakuje, daj znać — dopiszę.
+Poniżej znajduje się drzewo katalogów i plików związanych z kodem (snapshot wygenerowany automatycznie). **Uwaga:** to migawka i może odbiegać od stanu repo po sprzątaniu (skrypty przeniesiono do `scripts/`, dodano README w każdym serwisie, `dashboard-hil` podłączono do compose). Aktualne źródło prawdy to żywe drzewo repo; regeneracja: `python scripts/generate_docs.py`.
 
 - docker-compose.yml
-- generate_docs.py
+- scripts/generate_docs.py
 - README.md
 - programmingReferences.md
 - config/

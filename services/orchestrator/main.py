@@ -87,6 +87,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="UCAS Orchestrator",
+    version="3.1.0",
+    description="Universal Categorization as a Service - Orchestrator (cascade routing, persistence, fallback)",
     lifespan=lifespan
 )
 

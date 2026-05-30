@@ -37,4 +37,4 @@ Kaskada klasyfikacyjna składa się z następujących warstw, uruchamianych sekw
 
 ## Testy E2E
 
-Testy End-to-End dla całego systemu są uruchamiane za pomocą skryptu `test.ps1`, znajdującego się w głównym katalogu projektu.
+Testy End-to-End dla całego systemu są uruchamiane za pomocą skryptu `scripts/test.ps1`.

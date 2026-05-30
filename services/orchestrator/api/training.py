@@ -118,26 +118,30 @@ async def train(request: TrainRequest, db: Session = Depends(get_db)):
     embedding_success = False
     if training_samples_list:
         texts = [s.text for s in training_samples_list]
+        # embeddings-service ma limit 100 tekstow na request -> batchujemy po 100,
+        # inaczej dla wiekszych zbiorow dostajemy 400 i embeddingi sie nie zapisuja.
+        chunk_size = 100
+        all_embeddings = []
         try:
-            async with httpx.AsyncClient(timeout=30.0) as embed_client:
-                embed_response = await embed_client.post(
-                    f"{config.get('orchestrator.layers.embeddings.url')}/embed",
-                    json={"texts": texts, "normalize": True}
-                )
-                
-                if embed_response.status_code == 200:
-                    embed_data = embed_response.json()
-                    embeddings = embed_data.get("embeddings", [])
-                    
-                    # 🎯 N+1 eliminacja: przypisanie obiektowe (pgvector obsługuje natywne listy)
-                    for i, training_sample in enumerate(training_samples_list):
-                        if i < len(embeddings):
-                            training_sample.embedding = embeddings[i]
-                            
-                    embedding_success = True
-                else:
-                    print(f"🔴 Embeddings error: {embed_response.status_code}", file=sys.stderr, flush=True)
-                    
+            async with httpx.AsyncClient(timeout=60.0) as embed_client:
+                for start in range(0, len(texts), chunk_size):
+                    chunk = texts[start:start + chunk_size]
+                    embed_response = await embed_client.post(
+                        f"{config.get('orchestrator.layers.embeddings.url')}/embed",
+                        json={"texts": chunk, "normalize": True}
+                    )
+                    if embed_response.status_code == 200:
+                        all_embeddings.extend(embed_response.json().get("embeddings", []))
+                    else:
+                        print(f"🔴 Embeddings error: {embed_response.status_code}", file=sys.stderr, flush=True)
+                        all_embeddings = []
+                        break
+
+            if len(all_embeddings) == len(training_samples_list):
+                # 🎯 N+1 eliminacja: przypisanie obiektowe (pgvector obsługuje natywne listy)
+                for training_sample, emb in zip(training_samples_list, all_embeddings):
+                    training_sample.embedding = emb
+                embedding_success = True
         except Exception as e:
             print(f"🔴 Błąd przy generowaniu embeddingów: {e}", file=sys.stderr, flush=True)
     
@@ -163,10 +167,15 @@ async def train(request: TrainRequest, db: Session = Depends(get_db)):
         
         if "xgboost" in request.layers:
             try:
+                xgb_payload = {"categorizer_id": categorizer_id, "training_data": request.training_data, **(request.xgboost_config or {})}
+                # Transfer learning: jesli udalo sie policzyc pretrenowane embeddingi, podajemy je
+                # jako cechy (wyrownane do training_data). Inaczej xgboost-layer uzyje Word2Vec.
+                if embedding_success and len(all_embeddings) == len(request.training_data):
+                    xgb_payload["embeddings"] = all_embeddings
                 response = await client.post(
-                    f"{config.get('orchestrator.layers.xgboost.url')}/train", 
-                    json={"categorizer_id": categorizer_id, "training_data": request.training_data, **(request.xgboost_config or {})}, 
-                    timeout=60.0
+                    f"{config.get('orchestrator.layers.xgboost.url')}/train",
+                    json=xgb_payload,
+                    timeout=120.0
                 )
                 results["xgboost"] = response.json()
             except Exception as e:

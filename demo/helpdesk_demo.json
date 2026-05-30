@@ -1,0 +1,2731 @@
+{
+  "name": "Demo-Helpdesk-Routing",
+  "description": "Demo categorizer for partners: routes IT helpdesk tickets to the right team across 8 categories. Synthetic Polish data, safe to share.",
+  "layers": [
+    "tags",
+    "xgboost",
+    "llm",
+    "hil"
+  ],
+  "fallback_category": "Inne",
+  "hil_config": {
+    "enabled": true,
+    "tags_threshold": 0.7,
+    "xgboost_threshold": 0.6,
+    "llm_threshold": 0.8
+  },
+  "training_data": [
+    {
+      "text": "Nie mogę się zalogować do systemu CRM od rana. Wprowadzam hasło które znam, ale pisze że jest nieprawidłowe.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zapomniałem hasła do Atlassiana i nie pamiętam pytania bezpieczeństwa. Ktoś może mi to zresetować?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Moje konto w Active Directory zostało zablokowane po kilku nieudanych próbach logowania. Jak je odblokować?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nie dostaję kodów SMS do aplikacji Microsoft Authenticator. 2FA nie działa prawidłowo od wczoraj.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Jestem nowy w dziale finansów. Potrzebuję dostępu do systemu SAP i poczty korporacyjnej.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nie mam uprawnień do folderu sieciowego z projektami marketingu. Mogę przeczytać co tam jest?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "System wymusił mi zmianę hasła, ale po wpisaniu nowego nie mogę się zalogować. Co powinienem zrobić?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Sesja w logowaniu jednokrotnym (SSO) wygasa mi co 5 minut. To normalne? Uniemożliwia mi pracę.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Chciałbym zmienić swoją nazwę użytkownika z anna.kowalska na a.kowalska. Czy to możliwe?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Błąd autoryzacji - nie mogę uzyskać dostępu do bazy danych produktów. Moja rola to developer, powinnam mieć dostęp.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Kod TOTP z Authy wygasł i teraz nie mogę się zalogować do Jiry. Jak odzyskać dostęp?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowy login na laptopie nie funkcjonuje. Hasło działa na komputerze stacjonarnym ale nie na urządzeniu mobilnym.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Pracownik z pokoju 312 musi pilnie dostać uprawnienia do czytania logów serwera aplikacyjnego.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Reset hasła się nie powiódł. Dostałem maila z linkiem ale po kliknięciu nic się nie dzieje.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Czy mogę zmienić swoje pytanie bezpieczeństwa? Nie pamiętam odpowiedzi na stare.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Logowanie w Office 365 wymagane za każdym razem. Kiedyś zostało zapamiętane, co się zmieniło?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nie mogę potwierdzić logowania przez aplikację Microsoftu - brak powiadomienia.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Stary pracownik odszedł, ale jego konto wciąż istnieje. Powinniśmy je wyłączyć?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Mam uprawnienia do dysku Z ale tylko do folderu archiwum. Chciałbym dostęp do folderu z aktualnymi danymi.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Hasło wygasło 3 dni temu. Gdzie zmienić na nowe w systemie Windows?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Biuro w Warszawie - potrzebuję dostępu do VPN żeby pracować z domu w piątek.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zapomniałem loginu do GitLaba. Możecie mi przywrócić dostęp?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Po powrocie z urlopu moje konto jest nieaktywne. Trzeba je aktywować?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nie mogę się zalogować ani do Google Workspace ani do żadnego innego systemu. Czy problem jest po mojej stronie?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Uprawnienia zostały mi odebrane ale system mówi że je mam. Czy to się zsynchronizuje?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Kod dostępu do karty RFID do biura nie działa od rana. Gdzie to zgłosić?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zapomniałem hasła do maila - to konto powiązane z pracą.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Pracownik z zespołu QA potrzebuje dostępu do testowego środowiska bazy danych.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Logowanie SSO nie działa na komputerze pracownika. Musimy to naprawić dzisiaj rano.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Po resecie hasła login działa ale nie mogę zmienić ustawień profilu.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "2FA wysyła kody na stary numer telefonu. Musimy zmienić numer na aktualny.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Aplikacja Microsoft Authenticator synchronizuje się bardzo wolno. Czy to normalne?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Jak mogę uzyskać dostęp do raportów sprzedaży jeśli jestem z działu HR?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowy pracownik Mateusz czeka od 3 dni na konto w systemie. Gdzie to przyspieszyć?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zapomniane hasło i stary numer telefonu - nie mogę potwierdzić tożsamości. Co teraz?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Login wygasł bo 90 dni temu zmieniałem hasło. Ile razy w roku trzeba je zmieniać?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Dostęp do dysku sieciowego czasami działa czasami nie. Czy to problem po mojej stronie czy sieci?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nie mogę potwierdzić że to ja - kod dostępu do aplikacji nie przychodzi SMSem.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Po 5 nieudanych próbach logowania system zablokował mi konto. Mogę je odblokować sam?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zmiana hasła w Active Directory nie propaguje się do Slacka. Którego konta używać?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nie mam uprawnień do odczytu systemu CRM w Salesforce. Czy mogę je otrzymać?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Rejestracja 2FA nie zapamiętała urządzenia. Za każdym razem pyta o potwierdzenie.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Pracownik z recepcji nie może się zalogować na koncie ewidencyjnym.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Timeout SSO uniemożliwia mi pracę. Mogę mieć dłuższe sesje?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowy login w systemie - czy stary będzie usunięty czy zmigruje dane?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zapomniałem pytania bezpieczeństwa do odzyskiwania hasła - może być inne?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Moje konto zostało przypadkowo zablokowane przez kogoś innego. Kto je odblokuje?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Kod SMS przychodzi z 5 minutowym opóźnieniem - nie starcza czasu na logowanie.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowe stanowisko oznacza nowe uprawnienia. Kto je dodaje w systemie?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zapomniałem mojego loginu głównego. Mogę się zalogować mailem?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Konto pochodzi sprzed rebrandingu firmy - czy trzeba zmienić login?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Autoryzacja przez Microsoft Authenticator pokazuje błąd czasu. Zsynchronizować zegar?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Dostęp do plików projektu dla nowego członka zespołu - pilnie proszę.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Sesja wylogowuje mnie co 15 minut. Czy mogę mieć dłuższy timeout?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zmiana nazwiska pracownika - czy stary login będzie działać?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "SMS z kodem dostępu nie przychodzi - może być problem z operatorem?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Pracownik pracuje zdalnie - czy musi mieć VPN aby zalogować się do systemu?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Kod TOTP w Google Authenticator pokazuje inny numer - czy problem jest po mojej stronie?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Konto nowego kierownika projektu wymaga uprawnień administratora w Jira.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nie mogę zmienić hasła bo system mówi że jest takie samo jak wcześniej.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Zapomniane hasło do maila korporacyjnego - kto je resetuje?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Aplikacja 2FA nie synchronizuje się między moimi urządzeniami.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Login zawiera polskie znaki - czy system je obsługuje?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowy pracownik z biura w Gdańsku czeka na dostęp do systemu ewidencji.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Wygasłe hasło ale stary numer do SMS - co mogę zrobić?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Uprawnienia do folderu grupowego nie działają - mogę czytać ale nie zapisywać.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Sesja SSO loguje mnie ale nie przekierowuje do aplikacji.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Komuś udało się zalogować na moje konto - trzeba zmienić hasło.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowa osoba w dziale IT potrzebuje dostępu do narzędzi administratora.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Kod potwierdzenia 2FA nigdy nie przychodzi na maila - tylko SMS.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Pracownik dostał nowy laptop - czy konto będzie działać bez zmian?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Reset hasła poprzez link emailowy - czy link wygasa po jakimś czasie?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Dostęp do dysku zespołowego dla nowego grafika.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Logowanie przez konto korporacyjne - czy muszę mieć numer telefonu?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Konto zablokowane po 4 próbach - ile prób jeszcze zostało?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowy projekt - 8 osób potrzebuje dostępu do repozytorium kodu.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Pracownik z działu operacyjnego wymaga dostępu do modułu analitycznego.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Login jest zablokowany ale aplikacja mówi że konto aktywne - co się dzieje?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Uprawnienia dodane ale system ich nie widzi - zsynchronizować bazę?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowe hasło zawiera znak specjalny - czy wszystkie znaki są akceptowane?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Pracownik wrócił z urlopu - jego konto samo się aktywowało czy trzeba ręcznie?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Nowy projekt wymaga dostępu do repozytorium dla całego zespołu deweloperskiego.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Wysyłam prośbę o nadanie uprawnień administratora dla nowego team leadera.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Moje konto domenowe zostało wyłączone przez pomyłkę po reorganizacji działu.",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Czy mogę otrzymać dostęp tylko do odczytu do systemu kadrowego na potrzeby audytu?",
+      "category": "Dostep i Konto"
+    },
+    {
+      "text": "Dlaczego na fakturze z poprzedniego miesiąca jest źle wpisana kwota? Powinno być 1250 zł, a jest 1520 zł. Potrzebna korekta.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Nie dostałem faktury za abonament z kwietnia. Czy mogę prosić o przesłanie kopii?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "W systemie mam dwie identyczne faktury VAT z 15 marca - to duplikat czy błąd?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Numer NIP w nagłówku faktury jest nieprawidłowy. Jak to poprawić?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Transakcja kartą American Express została odrzucona. Zawsze działała, co się stało?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Zapłaciłem 500 zł za usługę która kosztuje 450 zł. Jak odzyskam nadpłatę?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Subskrypcja wygasa za 3 dni - gdzie mogę ją odnowić? Jaki kod zniżkowy obowiązuje teraz?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Przesłałem przelew 2 dni temu, ale status płatności wciąż pokazuje oczekiwanie. Co robić?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Otrzymałem wezwanie do zapłaty - mam 7 dni aby uregulować zaległość 800 zł. Czy to prawda?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Faktura FV/2026/0245 pokazuje błędny adres biura. Proszę o korektę.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Brakuje mi faktury za usługę hostingu za luty i marzec. Mogę prosić o wysłanie?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Otrzymałem trzy kopie tej samej faktury VAT z 10 maja. To normalne?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Nazwa firmy na fakturze jest stara - zmieniliśmy się na spółkę z o.o. Czy trzeba to aktualizować?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Próbuję zapłacić przez PayPal, ale system nie akceptuje karty. Pojawia się błąd 402. Pomocy!",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Chcielibyśmy zwrócić usługę i odzyskać pieniądze za ten miesiąc. Jak to zrobić?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Licencja na oprogramowanie jest ważna do końca czerwca. Ile kosztuje przedłużenie na kolejny rok?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Wysłałem wpłatę w zeszły czwartek - jak sprawdzić czy dotarła?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Otrzymaliśmy wezwanie o zapłatę zaległych 3500 zł. Myśleliśmy że to już zapłacone. Musimy to wyjaśnić.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Na fakturze z 5 kwietnia kwota netto to 6200 zł, ale z VAT wychodzi 7922 zł - czy VAT jest źle wyliczony?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Gdzie mogę znaleźć fakturę za styczeń? Przeglądałem maile i jej tam nie ma.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Czy mogę prosić o jedną zbiorczą fakturę zamiast pięciu osobnych z ostatniego kwartału?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Mamy nowy adres siedziby. Proszę zaktualizować dane na kolejnych fakturach.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Moja karta zniknęła z listy dozwolonych. Jak dodać nową kartę kredytową do systemu?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Zwracam usługę z powodu niespełnienia warunków umowy. Mogę prosić o pełny zwrot 2400 zł?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Czy abonament obejmuje wsparcie premium? Nie widzę tego na fakturze FV/2026/0189.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Przelew miał zająć trzy dni robocze - dziś czwarty. Dlaczego wciąż czeka na potwierdzenie?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Przypominamy, że nie zapłaciliście faktury z grudnia (3100 zł). Prosimy o niezwłoczną wpłatę.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Na fakturze są połączone sumy za dwie różne usługi. Czy mogę prosić o osobne faktury?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Pracuję dla firmy zagranicznej. Czy faktura może zawierać zagraniczny numer podatkowy?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Próbuję zapłacić, ale dostaję komunikat 'Płatność niedostępna dla Twojego kraju'. Co z tym zrobić?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Potwierdzenie transferu pokazuje 890 zł, ale faktura opiewa na 980 zł. Brakuje 90 zł.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Rozliczenie od stycznia się nie zgadza. Mogę prosić o dokładny raport faktur?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Otrzymałem dwie faktury z tym samym numerem. Która jest prawidłowa?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Zmieniliśmy formę prawną na spółkę - trzeba zmienić numer NIP na kolejnych dokumentach.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Karta Visa została odrzucona trzy razy z rzędu. Bank mówi że wszystko w porządku. Może to problem po Waszej stronie?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Po reklamacji chcemy zwrócić tylko część kwoty - 1800 z 2500 zł. Czy to możliwe?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Subskrypcja pro kończy się w poniedziałek. Ile kosztuje upgrade do premium?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Status mojej płatności nie zmienił się od 4 dni. Sprawdziliście czy wpłynęła?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Ostatnie ostrzeżenie: jeśli do piątku nie uregulujecie faktury 4200 zł, będą kary umowne.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Faktura mówi że firma to ABC sp. z o.o. ale my jesteśmy ABC Polska sp. z o.o. Poprawimy?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Nie ma faktury za maj. Styczeń, luty, marzec, kwiecień są - ale maj gdzieś zniknął.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Chciałabym prosić o trzy kopie faktury z kwietnia do celów księgowych.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Zmiana danych do faktury: nowa ulica i numer lokalu. Proszę o aktualizację.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Transakcja została odrzucona z kodem błędu. Co to oznacza?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Licencja jest ważna do 30 czerwca 2026. Ile kosztuje przedłużenie na 12 miesięcy?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Przychód wpłynął 28 marca, ale system pokazuje 3 kwietnia - skąd ta różnica?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Mam siedem dni na zapłatę - czy mogę negocjować przedłużenie do 14 dni?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Na rachunku z marca widać 450 zł, ale w księgach mam 540 zł. To błąd?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Brakuje faktury nr FV/2026/0052 z marca. Mogę poprosić o kopię?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Dlaczego mam w historii dwie faktury o numerze FV/2026/0127 z różnych dat?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Nazwa podatnika została zmieniona - wszystkie faktury powinny mieć teraz nową firmę.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Visa nie przechodzi z powodu drobnego błędu bankowego, mogę spróbować MasterCard?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Usługa nas rozczarowała - prosimy o pełny zwrot 7200 zł za ten okres.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Abonament kończy się 15 lipca. Chciałbym go przedłużyć z aktualną promocją.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Wysłałem przelew bankowy - czy widnieje już jako zaksięgowany?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Otrzymaliśmy wezwanie do zapłaty. Musimy sprawdzić czy warunki umowy na to pozwalają.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Faktura za asystę techniczną pokazuje 2100 zł, ale umowa mówi 1900 zł. Potrzebna korekta.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "W jakim terminie otrzymam fakturę za usługę hostingu?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Mam w systemie kilka duplikatów faktur. Co zrobić z wielokrotnym zaksięgowaniem?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Adres na fakturze jest z 2023 roku. Siedzimy teraz pod nowym adresem w gminie Piaseczno.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Płacę kartą Mastercard, ale system mówi że karta została zablokowana. Proszę o pomoc.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Kiedy zwrócicie mi 250 zł nadpłaty? Na kiedy mogę liczyć na pieniądze?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Licencja na Windows Server - ile kosztuje przedłużenie dla dodatkowych 5 stanowisk?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Wygląda na to że zaksięgowano złą kwotę przychodu. Trzeba zweryfikować dokumenty.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Ostateczny termin to piątek - wciąż brakuje potwierdzenia wpłaty faktury 1750 zł.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Numer faktury nie zgadza się z tym co mam w księdze przychodów. Jaki jest prawidłowy?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Można prosić o faktury za pierwsze sześć miesięcy w jednym pliku PDF zamiast sześciu osobnych?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Zmieniliśmy właściciela - nowy numer NIP. Muszę to zaktualizować na fakturach.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Transakcja Amex nie przechodzi już piąty raz. Może to limit karty? Czy może być inny powód?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Zwracam pakiet: 100 zł z 200 zł, bo z drugiej usługi nadal korzystam.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Abonament premium wygasa 22 czerwca. Gdzie mogę go przedłużyć? Czy ma auto-odnowienie?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Płatność jest w statusie 'oczekuje' od dwóch tygodni. Czy coś się zawiesiło?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Uprzejmie prosimy o uregulowanie zaległego rachunku 6700 zł z marca. Dziękujemy.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "VAT na fakturze z kwietnia się nie zgadza - netto 8000 zł, VAT 1500 zł, a 23% to 1840 zł.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Nie mogę znaleźć faktury za usługę doradztwa strategicznego z czerwca ubiegłego roku.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Czy mogę prosić o fakturę wystawioną na dane osobiste zamiast firmowe?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Karta debetowa odrzucana trzeci dzień z rzędu. Bank wskazuje na Was, prosimy o sprawdzenie.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Abonament kończy się za tydzień - czy odnawia się automatycznie czy muszę to zrobić ręcznie?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Przelałem 1500 zł - czy to już zaliczone jako zapłata faktury FV/2026/0340?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Uprzejmie prosimy o uregulowanie zaległych płatności w ciągu pięciu dni roboczych.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Czy mogę otrzymać duplikat faktury proforma z zeszłego miesiąca?",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Po zmianie pakietu cena na fakturze wzrosła, choć nie zmienialiśmy zakresu usług. Proszę o wyjaśnienie.",
+      "category": "Platnosci i Faktury"
+    },
+    {
+      "text": "Panel administracyjny się zawiesza gdy otwieram listę użytkowników z ponad 500 rekordami.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Dostaję błąd 500 przy próbie zatwierdzenia dokumentu w module obiegu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po ostatniej aktualizacji widzę tylko biały ekran zamiast dashboardu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Pojawia się NullPointerException przy kliknięciu na przycisk eksportu w raporcie.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "System nie zapisuje zmian w karcie pracownika, choć nie pokazuje żadnych błędów.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Eksport do Excela zwraca pusty plik, choć dane są widoczne na ekranie.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po aktualizacji do wersji 3.2 funkcja filtrowania w ogóle nie działa.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Wykres sprzedaży się nie renderuje, wyświetla się stacktrace ArrayIndexOutOfBounds.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Dane z modułu HR nie synchronizują się z modułem płac od dwóch dni.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Wysłanie formularza kończy się komunikatem Connection timeout, ale bez szczegółów.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Moduł finalizacji zamówień zawiesza się gdy ma obliczyć marżę dla ponad 100 pozycji.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Pusty ekran po zalogowaniu od godziny 14:30, wcześniej działał normalnie.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Raport pracowników się nie generuje, timeout po 5 minutach.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Import CSV się nie powiódł - system wyświetlił Communication error bez kodu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Nie mogę obliczyć bonusu - panel zgłasza Invalid calculation parameters.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po aktualizacji system nie pokazuje statusów zadań z poprzedniego miesiąca.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Zapisanie rekordu trwa ponad 30 sekund, a potem czasami wyświetla się błąd.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Panel wyświetla w konsoli komunikat Fatal error when loading modules.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Eksport raportów finansowych zwraca pliki z błędnymi sumami.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Synchronizacja magazynu z punktem sprzedaży nie wysyła aktualnych cen.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Funkcja masowej zmiany statusu zgłoszeń działa wolno i czasem się przerywa.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Błąd serwera 500 przy próbie edycji szablonu wiadomości.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Od północy program zwraca puste raporty mimo że dane były wprowadzone.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Przy otwarciu modułu logistyki dostaję wyjątek Database connection failed.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "System nie pozwala zapisać nowego kontrahenta - zawsze błąd przy walidacji.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Plik CSV z kontrahentami się nie importuje, komunikat Unsupported format.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po wczorajszej aktualizacji funkcja archiwizacji zniknęła z menu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Wykres analityki sprzedaży pokazuje stare dane, nie aktualizuje się.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Moduł synchronizacji z bazą danych całkowicie się zawiesza, trzeba ubić proces.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Oprogramowanie zamyka się bez ostrzeżenia gdy otwieram duży plik PDF.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Biały ekran po zmianie języka na niemiecki, muszę przywracać angielski.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Przy zapisywaniu dokumentu otrzymuję RuntimeException o braku pamięci.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Import ze starego systemu zawiesza się na 80 procentach.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Raport sprzedaży nie oblicza należnych prowizji dla handlowców.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Portal pracownika zwraca komunikat Deadline for data synchronization exceeded.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Nie mogę otworzyć menu ustawień - wyświetla się pusty ekran.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "System wyrzuca StackOverflowError przy generowaniu raportu hierarchii.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Eksport do PDF zawiesza się na 50 procentach przy raporcie z dużymi tabelami.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Dane z importu Excel się nie pokazują, choć plik został zaakceptowany.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po aktualizacji przycisk usuwania dokumentów zniknął z interfejsu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Narzędzie do kalkulacji wynagrodzeń nie wczytuje danych z poprzedniego miesiąca.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Synchronizacja kont użytkowników między systemami się zawiesiła.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Program przestaje reagować gdy mam otwartych wiele zakładek.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Moduł tworzenia faktur pokazuje Error 500 Invalid server response.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Pusty pulpit po zalogowaniu do systemu CRM.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Raport o pracownikach niepełnoetatowych zwraca błędne liczby.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Import CSV nie akceptuje polskich znaków, mimo kodowania UTF-8.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Nie mogę zmodyfikować stanowiska pracownika - zgłasza się błąd.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Panel kontrolny się zawiesza przy otwieraniu dwóch raportów jednocześnie.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Serwer zwraca błąd 500 przy próbie pobrania listy kontraktów.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Wyjątek ClassNotFoundException przy załadowaniu modułu integracyjnego.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Nowe rekordy nie zapisują się w module kadrowym, jakby się zawieszały.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Eksport danych klientów do Excela daje plik z samymi nagłówkami.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Funkcja wyszukiwania nie działa od czasu aktualizacji.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Wykres obrotów na żywo w ogóle się nie wyświetla.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "System nie synchronizuje nowych pracowników z systemem kadrowym.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Zlecenie wydruku raportu się nie przetwarza, timeout po 10 minutach.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Program restartuje się bez ostrzeżenia przy dodawaniu nowego użytkownika.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Interfejs się nie wczytuje - widzę czarny ekran lub brak kontrolek.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Przy zamykaniu aplikacji wyświetla się komunikat Unhandled exception.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Nie mogę zapisać zmian w ustawieniach profilu użytkownika.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Import listy placówek z formatu XLS zwraca błąd Unsupported version.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Moduł sprzedaży nie pokazuje produktów po ostatniej aktualizacji.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Raport zyskowności wyświetla ujemne wartości dla wszystkich pozycji.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Synchronizacja z magazynem przerywa się co kilka minut.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Ikona na ekranie logowania się nie ładuje - czarny kwadrat zamiast grafiki.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Błąd 500 przy kliknięciu na dowolny dokument w archiwum.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "System po uruchomieniu pokazuje pusty ekran przez 5 minut.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Komunikat OutOfMemoryError podczas generowania dużego raportu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Dodanie nowego projektu się nie udaje - zawsze ten sam błąd.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Eksport do CSV nie działa dla żadnego z raportów.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po aktualizacji do trzeciej wersji rozliczenia pracowników się nie obliczają.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Zsynchronizowanie kont między oddziałami się nie powiodło.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "System się zawiesza przy wczytywaniu dużych zbiorów danych.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Narzędzie obliczania bonusów wyrzuca błąd IllegalArgumentException.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Menu nie wyświetla się prawidłowo - widzę tylko tekst bez formatowania.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Serwer odpowiada błędem 500 przy eksporcie listy pracowników.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po włączeniu system pokazuje pusty pulpit zamiast widoku domyślnego.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "W logu pojawia się java.lang.NullPointerException przy obliczeniu marży.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Rekordy się nie zachowują, jakby zapisywanie się nie udawało.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Plik Excel przy imporcie powoduje crash aplikacji bez komunikatu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Szybkie filtrowanie przestało działać po ostatnim patchu.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Generowanie wykresu histogramowego co chwilę się zawiesza.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Moduł integracyjny nie komunikuje się ze zdalnym API.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Po kliknięciu Zapisz aplikacja zamyka się i traci wprowadzone dane.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Wyszukiwarka klientów zwraca wyniki sprzed tygodnia, mimo nowych wpisów.",
+      "category": "Blad Aplikacji"
+    },
+    {
+      "text": "Nie mogę uruchomić laptopa. Wciskam przycisk zasilania, ale ekran pozostaje czarny, bez żadnych oznak życia.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mój komputer stacjonarny stanął wczoraj wieczorem i nie chce się włączyć, czasem tylko mignie dioda.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "ThinkPad nie reaguje na wciśnięcie włącznika, dioda baterii nie miga. Coś jest nie tak z zasilaniem.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Stanowisko w pokoju 302 - laptop Dell się nie uruchamia. Czy można to szybko naprawić?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Komputer nie włącza się od rana. Słyszę bzyczenie z obudowy, ale ekran jest czarny.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mój HP nie włącza się już trzeci dzień. Proszę o naprawę zanim będzie gorzej.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Kolega obok nie może uruchomić laptopa - przycisk działa, ale nic się nie zapala. Pomożecie?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mój desktop na trzecim piętrze nagle przestał się uruchamiać. Może zasilacz się zepsuł?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Urządzenie Lenovo nie daje znaku życia. Kiedy ostatnio sprawdzaliście zasilacze w naszym dziale?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Komputer do projektów graficznych nie startuje. Wczoraj działał, dziś nic.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Drukarka w sali 105 nie drukuje od wczoraj. Pobiera papier, ale nic nie wychodzi, miga pomarańczowa dioda.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Drukowanie nie działa w naszym oddziale. Drukarka odsyła papier bez wydruku.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Toner się zaciął, chyba papier zakleszczył się w środku drukarki. Wymaga serwisu.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Drukarka biurowa ciągle zacina papier. Coś się wewnątrz zakleszczyło i nie drukuje.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Nowa drukarka Xerox wydaje dziwny dźwięk i miga na czerwono. Nic nie drukuje.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "W drukarce brakuje czarnego tonera, wyświetla ostrzeżenie. Można zamówić nowy?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Drukarka zacina się przy papierze A4 i wcale nie drukuje. Mogę dostać inną z drugiego piętra?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Moja drukarka miga nieprzerwanie zieloną diodą, ale nie drukuje. Wygląda na awarię sprzętu.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Podajnik drukarki nie działa prawidłowo - papier się nie podaje albo zacina wewnątrz urządzenia.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Po ostatnim serwisie drukarka nie drukuje, świeci dioda alarmu, reset nie pomaga.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Monitor migocze nieprzerwanie od wczoraj rano. Obraz skacze góra-dół, nie da się przy tym pracować.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Ekran na moim stanowisku zaczął mrugać i szarpać obraz. Połączenie sprawdziłem, to coś innego.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mój drugi monitor się zepsuł, ekran jest całkiem czarny mimo że komputer działa.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Monitor Dell w pokoju 215 ma pękniętą szybę w górnej części. Nie widać dobrze.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Ekran monitora ma czarne linie i dziwnie wyświetla obraz. Może kabel jest uszkodzony?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Siedzę bez monitora już tydzień, mogę dostać nowy? Pożyczony od kolegi przestał działać.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mój ekran okresowo gaśnie na sekundę i wraca. Może to problem z kablem DisplayPort?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Monitor dziś się w ogóle nie włączył, choć komputer działa. To kabel czy samo urządzenie?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Drugi monitor, który mi dali, działa dziwnie - obraz zmienia się co chwilę.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mam problem z monitorem - wyświetla bardzo blado, coś z ustawieniami lub sprzętem nie gra.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Klawiatura nie reaguje na kilka klawiszy. Niektóre działają, inne w ogóle.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mysz bezprzewodowa nie łączy się z komputerem, jakby straciła sygnał. Zasilanie jest ok.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Zalałem klawiaturę wczoraj przy lunchu. Teraz część klawiszy nie reaguje, kilka się zacięło.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Klawisz Enter na mojej klawiaturze się zawiesza, nie wraca po naciśnięciu. Proszę o wymianę.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mysz bezprzewodowa padła i nie reaguje na klikanie ani ruch. Baterie sprawdziłem.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Klawiatura odłączyła się i nie pojawia się ponownie. Kabel USB chyba uszkodzony.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Nie mogę pracować, bo moja klawiatura nie działa - kilka klawiszy w ogóle nie reaguje.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Nowa mysz już się nie łączy. Wciskałem reset, ale bez zmian. Proszę o inną jeśli można.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Klawiatura mechaniczna się psuje - klawisze klikają same z siebie. Nie wiem co się stało.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Rozlałem kawę na klawiaturę i teraz kilka przycisków działa dziwnie albo wcale.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Stacja dokująca nie działa, laptop się przez nią nie ładuje i nie widzę monitorów.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Dok do laptopa nie przekazuje zasilania, komputer się nie ładuje po podłączeniu.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Przejściówka USB-C ze stacji dokującej nie działa, nie wykrywa ekranów.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Zgubił się kabel do stacji dokującej. Czy można dostać zamiennik?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Stacja dokująca dla laptopa Dell nie chce się komunikować, choć zasilacz jest w gniazdku.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Dok HDMI przestał działać po szarpnięciu kabla. Coś się chyba uszkodziło.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Przejściówka USB do adaptera się zepsuła, nic przez nią nie przesyła. Potrzebna nowa.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Stacja dokująca nie wykrywa dodatkowych monitorów ani klawiatury i nie ładuje laptopa.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Kabel do doku uszkodzony, nie mogę pracować przy tym stanowisku. Wymiana potrzebna pilnie.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Stacja dokująca Dell przestała działać, chyba coś się zepsuło wewnątrz. Mogę dostać inną?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Bateria w laptopie w ogóle się nie ładuje, nawet podłączona pokazuje że jest rozładowana.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Ładowarka do mojego ThinkPada gdzieś zaginęła. Czy jest zapasowa?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Zasilacz laptopa został zgnieciony podczas transportu, nie mogę go włożyć do gniazda.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Bateria laptopa prawie się nie ładuje, bez zasilacza działa zaledwie kilka minut.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Kabel zasilający komputera ma pękniętą izolację, widać przewód. Czy to bezpieczne?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Ładowarka przegrzewa się zaraz po podłączeniu. Co to oznacza dla sprzętu?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mam uszkodzone zasilanie na stanowisku - nie mogę nic podłączyć, port czy zasilacz padł?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Nowa bateria laptopa już źle się ładuje, po dwóch godzinach wskazuje że nie jest pełna.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Zepsuł się zasilacz do iMaca, nie mam jak naładować ani uruchomić komputera.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Dysk twardy chyba pada, słychać dziwne dźwięki z obudowy, a komputer coraz mocniej się zacina.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Pamięć RAM chyba uszkodzona - przy starcie komputera pojawiają się błędy.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Komputer mocno się przegrzewa, wentylatory szumią jak szalone. Można coś z tym zrobić?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Dysk SSD w laptopie chyba nie działa z pełną prędkością, wszystko jest bardzo wolne.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Komputer nie rozpoznaje pełnej ilości pamięci RAM. Może kość się uszkodziła?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Wentylator chłodzący pracuje czasami bardzo głośno, urządzenie się przegrzewa. To normalne?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Dysk twardy czasem piszczy, jestem pewien że coś jest nie tak z przechowywaniem danych.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Dysk nie pokazuje się w systemie, możliwe że kabel albo slot uległ uszkodzeniu.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Komputer robi się coraz wolniejszy, myślę że dysk jest pełny. Czy można dać większy?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Moja kamera internetowa się nie włącza, system nie może znaleźć urządzenia.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mikrofon w laptopie w ogóle nie działa, nagrywam, ale dźwięk się nie rejestruje.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Słuchawki zalałem wczoraj i nie da się ich używać, jedna strona całkiem milczy.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Głośnik w laptopie się zepsuł, dźwięk jest bardzo cichy albo go wcale nie ma.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Kamera USB nie działa po podłączeniu do innego komputera. To sprzęt czy kabel?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mikrofon bezprzewodowy w sali narad nie łączy się z odbiornikiem, choć baterie są na miejscu.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Słuchawki do Teams się zepsuły, jedna muszla się nie domyka.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Głośniki przekazujące dźwięk z wideokonferencji nagle całkiem ucichły. Coś się zepsuło w urządzeniu.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Zepsuła mi się kamera w laptopie, nie widać mnie na spotkaniach online.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Potrzebuję nowego sprzętu - moje urządzenie jest bardzo stare i nie wyrabia z pracą.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Czy mogę dostać nowy laptop? Ten ma już kilka lat, bateria szybko się wyczerpuje i działa wolno.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Mój komputer psuje się coraz bardziej, czy jest możliwość wymiany na nowszy?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Laptop na stanowisku już się nie nadaje, naprawy nic nie dają. Proszę o wymianę na nowy.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Monitor padł zupełnie, czy mogę dostać zamiennik? Naprawa pewnie kosztuje więcej niż nowy.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Drukarka w dziale całkiem się zepsuła, potrzebujemy nowej dla wszystkich pracowników.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Czy jest budżet na wymianę laptopów? Mój ma pęknięty ekran i nie warto go naprawiać.",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Cała stacja robocza się zepsuła - komputer, monitor, wszystko. Czy mogę dostać nowy komplet?",
+      "category": "Sprzet"
+    },
+    {
+      "text": "Nie mam dostępu do internetu od godziny 9. Co się stało?",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Połączenie VPN zrywa mi się co kilka minut, nie wiem co robić.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "WiFi w biurze nie chce się połączyć, próbowałem ponownie wpisać hasło, ale nic.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sieć jest dzisiaj bardzo wolna, wszystko się zawiesza.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Nie mogę dostać się do dysku współdzielonego na serwerze, błąd dostępu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Strona naszego dostawcy jest dla mnie zablokowana, pewnie przez firewall.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarki HP w holu nie widać w sieci, wczoraj działała.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Timeout przy logowaniu do systemu CRM, połączenie się przerywa.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Kabel LAN przy moim stanowisku chyba się poluzował, nie mam sieci.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Pilnie potrzebuję internetu! Od rana sieć nie działa w całym dziale HR.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN wylogowuje mnie automatycznie co 30 minut, bardzo to irytujące.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sygnał WiFi w pokoju 205 jest bardzo słaby, ledwo się łączy.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Duże opóźnienia w połączeniu z bazą danych, wszystkie zapytania są wolne.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Folder na serwerze finansowym nie pokazuje się w Eksploratorze, nie wiem dlaczego.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Próbuję otworzyć portal szkoleniowy, ale jest zablokowany - proszę o odblokowanie.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka sieciowa w piwnicy zniknęła z listy dostępnych urządzeń.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Połączenie z serwerem ciągle się przerywa, nie mogę pracować nad dokumentem.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Switch sieciowy w serwerowni chyba się przegrzał, przerywa połączenia.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Zacząłem pracę, a router pokazuje błąd - brak internetu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN od rana nie chce się połączyć, jakiś błąd SSL.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "W salce konferencyjnej A nie ma WiFi, tylko w salce B - to niewygodne.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Ping do serwera przekracza 500 ms, to za dużo do normalnej pracy.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Zasób sieciowy na serwerze plików jest niedostępny dla mojego konta.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Chyba blokada portów mnie dotyczy - nie mogę połączyć się z bazą.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka w biurze głównym jest niewidoczna w sieci od wczoraj wieczorem.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Serwer CRM się nie otwiera, co chwilę wyskakuje timeout.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Kabel sieciowy wypada mi z portu, przez to sieć pada.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Brak internetu od przedpołudnia, w ogóle nie mogę pracować.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN wyrzuca mnie podczas logowania, jakiś błąd autoryzacji.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sieć WiFi ciągle się rozłącza, nie wiem czemu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Łącze do centrali jest bardzo opóźnione, transfery trwają wieczność.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Nie mogę zamapować dysku sieciowego, brak dostępu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Firewall blokuje mi dostęp do aplikacji monitoringu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka sieciowa Canon przy recepcji nie jest widoczna z mojego komputera.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Połączenie przerywa się przy przesyłaniu dużych plików.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Część biura straciła internet, druga połowa działa normalnie.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Internet padł całkowicie o 14:30, czy ktoś wie co się dzieje?",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN się nie łączy, pokazuje błąd połączenia.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "WiFi ma bardzo słaby zasięg przy oknie, ledwo jedna kreska.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Prędkość połączenia drastycznie spadła, pobieranie ma pół megabita.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Nie mogę wejść do folderu współdzielonego, system nie daje dostępu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Strona, której potrzebuję do pracy, jest zablokowana przez politykę firewalla.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka HP w pokoju 104 jest offline w sieci.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Serwer aplikacji ciągle się rozłącza, nie mogę nic zrobić.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Gniazdo sieciowe przy biurku nie przewodzi, internet zniknął.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sieć pada coraz częściej, to już trzeci raz dzisiaj.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN rozłącza się za każdym razem gdy przełączam aplikacje.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sygnał sieci bezprzewodowej jest słaby w strefie magazynu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Ping jest bardzo wysoki, nie da się normalnie pracować.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Serwer plików nie chce się zamapować, błąd access denied.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Portale firmowe są dla mnie zablokowane, pewnie restrykcja.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka sieciowa Xerox nie drukuje, nie widać jej w sieci.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Połączenie ciągle się zrywa, timeout przy każdej operacji.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Switch w serwerowni miga na czerwono, chyba coś się zepsuło.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Całe biuro bez sieci od 8:45, kiedy będzie naprawa?",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN nie łączy się z moim adresem IP, błąd uwierzytelnienia.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "WiFi w sali spotkań pada co 5 minut.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Opóźnienia sieciowe są duże, strony ładują się bardzo wolno.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Nie widzę zasobu na dysku L, brak uprawnień?",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Dostęp do stron zewnętrznych jest dla mnie zablokowany przez politykę.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka w biurze jest niewidoczna, nie mogę nic wydrukować.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Baza danych ciągle się rozłącza, nie mogę pobrać danych.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Router przy stanowisku chyba się zawiesił, brak internetu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Internet zerwany od północy, sprawa pilna!",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN wyrzuca błąd przy próbie połączenia.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sieć WiFi bardzo się zacina, szczególnie w godzinach szczytu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Transfery przez sieć trwają znacznie dłużej niż powinny.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Dysk sieciowy jest niedostępny, błąd dostępu.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Nie mogę otworzyć portalu pracownika, strona zablokowana.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka sieciowa Brother nie jest dostępna z mojego komputera.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sesja VPN zrywa się co chwilę, bardzo to frustrujące.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Kable sieciowe w biurze są pomieszane, których mam użyć?",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Brak łączności z internetem, sieć pada niemal codziennie.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN nie inicjalizuje się poprawnie, zawsze kończy się timeoutem.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Sygnał WiFi w holu jest praktycznie zerowy - gdzie jest access point?",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Połączenie z serwerem przerywa się w losowych momentach.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Dysk sieciowy F się nie mapuje, błąd sieci.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Blokada stron przez firewall jest zbyt restrykcyjna do mojej pracy.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Drukarka sieciowa w piwnicy nie drukuje, możecie sprawdzić?",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Serwer aplikacji odpowiada bardzo wolno, timeout co minutę.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Port ethernetowy nie działa, internet padł na całym stanowisku.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Internet nie działa od godziny, potrzebuję pomocy!",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "VPN wylogowuje się co 10 minut, coś jest nie tak.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "WiFi w pokoju 301 ma bardzo ograniczony zasięg.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Łącze jest mocno opóźnione, pobieranie tylko 1 Mbps.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Nie mam dostępu do zasobu z archiwum, odmowa uprawnień.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Router przestał odpowiadać, sieć padła całkowicie.",
+      "category": "Siec i Lacznosc"
+    },
+    {
+      "text": "Nie mogę wysłać maila. Dostaję błąd 'Server Unavailable' od ponad godziny. Co się dzieje?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Skrzynka odbiorcza całkowicie zamarła. Nie przychodzą żadne nowe wiadomości od wczoraj wieczorem.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Maile do klienta utknęły w wysłanych. Wysłałem je trzy razy, ale on nic nie otrzymał.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Poczta się zawiesza kiedy próbuję pobrać załącznik. Zawsze pada przy plikach powyżej 10 MB.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mój limit przechowywania się wyczerpał. Nie mogę odbierać nowych wiadomości, muszę pilnie coś zarchiwizować.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Odpisałem na maila z piątku, ale nie widzę go w wysłanych ani u odbiorcy. Gdzieś zniknął.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Na telefonie nie mam synchronizacji maili z Outlooka. Coś się popsuło w ustawieniach.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Spam zalewa mi skrzynkę. Dostaję 50 wiadomości dziennie. Czy można to zablokować?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Dostałem wiadomość od kogoś podającego się za IT, prosi o hasło. To chyba phishing?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Spotkanie w kalendarzu nie wysyła powiadomień. Ustawiłem przypomnienie na 15 minut przed, ale nic się nie dzieje.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Teams nie chce się połączyć od rana. Aplikacja się otwiera, ale nie mogę dołączyć do żadnego kanału.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Powiadomienia ze Slacka nie przychodzą na telefon. Na komputerze działają, mobilnie nic.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mój autoresponder nie działa kiedy jestem na urlopie. Ludzie piszą, a ja nie odpowiadam automatycznie.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Stopka mailowa nie wyświetla się prawidłowo u odbiorców. Logo jest uszkodzone, formatowanie pomieszane.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Nie mogę zaakceptować zaproszenia na spotkanie. Przycisk zawsze wyświetla błąd.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Grupa mailowa Zespół Finansowy nie dostaje moich wiadomości. Jestem członkiem, a jednak nie działa.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Lista dystrybucyjna dla projektów zniknęła. Gdzie mam teraz wysyłać informacje zespołowi?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wysłany przeze mnie PDF otwiera się jako zlepek znaków. Załącznik może być uszkodzony.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Nie potrafię dodać konta Office 365 do Outlooka. Autoryzacja się nie kończy.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Alias mailowy nie przekierowuje wiadomości. Trafiają chyba w pustkę.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Skrzynka współdzielona dla zespołu z Gdańska się zablokowała. Wszyscy dostają 'quota exceeded'?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Instrukcja konfiguracji poczty na iPhonie nie działa. Outlook nie chce się zalogować.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Moje sygnatury mailowe zniknęły z szablonów. Dodałem nową, ale Outlook jej nie rozpoznaje.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mam spotkanie z klientem w kalendarzu, ale nie widzę linku do Teams. Gdzie się podział?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Dostałem wiadomość od banku z linkiem do logowania. Wygląda mi to podejrzanie.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Nie mogę usunąć starych maili, żeby zwolnić miejsce. Skrzynka ma 15 GB i jest prawie pełna.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Powiadomienie o nowej wiadomości przychodzi z 30 minutowym opóźnieniem. Po co mi wtedy?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Łączność w Teams mam przerwaną. Wszyscy widzą że jestem, ale ja nie mogę dołączyć głosowo.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Załącznik 45 MB nie przechodzi przez pocztę. Muszę to szybko wysłać do szefa.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Nowa pracowniczka nie ma dostępu do listy mailowej zespołu. Jak ją dodać?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wiadomości w Outlooku nie sortują się chronologicznie. Najnowsze są na końcu.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mój status 'zajęty' w kalendarzu nie pokazuje się innym. Wszyscy rezerwują mnie w tym samym czasie.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Ktoś nieznajomy chce dodać mnie w Teams z podejrzanego konta. Nie wiem czy ufać.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mam masę spamu, nawet w folderze spam. Jak ustawić automatyczne czyszczenie?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wysłałem zaproszenie na imprezę firmową do 50 osób, ale większość go nie dostała.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Outlook się zawiesza. Cały program zamyka się przy otwarciu większego załącznika.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Dostęp do poczty z Gmaila działa ciężko, maile ładują się po 5 minut.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Ktoś używa mojego adresu mailowego do wysyłania spamu. Jak to zatrzymać?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wiadomości na Slacku się nie wysyłają. Naciskam wyślij, ale nic się nie dzieje.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mój autoresponder nie informuje o nieobecności, choć go ustawiłem.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Link do potwierdzenia adresu w Outlooku wygasł. Nie mogę go ponownie potwierdzić.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Zadania w Teams nie synchronizują się z moim kalendarzem. Wszystko się myli.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Grupa IT Support otrzymywała maile, ale teraz nikt z nas ich nie widzi.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wysyłam zaproszenie do kalendarza, ale odbiorcy nie mogą go zaakceptować.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Załącznik Excel z makrami nie przechodzi przez filtr bezpieczeństwa. Muszę go pilnie wysłać.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Moje konto w Teams pokazuje się jako offline, choć jestem online. Wszyscy myślą że mnie nie ma.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Powiadomienia z Outlooka na pulpicie nie wyświetlają się od rana.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Dokumenty wysłane jako załączniki mają u odbiorcy małą czcionkę. Może to problem z konwersją.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Kanał w Teams dla nowych projektów jest pusty. Czy coś się skasowało?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Skrzynka dla zespołu z Krakowa przekracza limit. Co robić kiedy się zapełni?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Nie mogę zmienić hasła do poczty. System mówi że jest zbyt proste, choć go wymyśliłem.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wiadomość od 'Administratora IT' prosi o dane logowania. To oszust?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Spotkanie z 15 marca pokazuje się dwa razy w moim kalendarzu. Jeden to duplikat.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Dostęp do skrzynki wspólnej dla handlu się zablokował. Nikt nie może tam wrzucać dokumentów.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Slack nieprawidłowo pokazuje nieprzeczytane wiadomości. Zawsze wisi tam coś starego.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Podpis mailowy z logo nie wyświetla się w poczcie webowej. Logo się nie ładuje.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Zaproszenie na webinar otwiera się jako dziwny plik. Jak je otworzyć?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Moje wiadomości w Teams są widoczne tylko dla mnie. Nikt inny ich nie widzi.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Archiwum starych maili nie otwiera się. Dostęp 'Access Denied'.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Każdy mail od pewnej firmy trafia do spamu. Jak dodać go do białej listy?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Udostępniony kalendarz zespołu pokazuje stare dane. Chyba nie synchronizuje się prawidłowo.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Nie mogę wejść na pocztę z drugiego komputera. System mówi że sesja już istnieje.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Załącznik tekstowy jest całkowicie nieczytelny. Znaki pomieszały się w transmisji.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Lista dystrybucyjna dla sprzedaży nie wysyła maili do wszystkich. Kilka osób go nie dostało.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "W Teams nie mogę dołączyć do połączenia wideo. Mikrofon się nie inicjalizuje.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Moja skrzynka zawiera 3000 maili. Jak szybko je posortować bez archiwizowania?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wiadomość 'Verify your account' wygląda oficjalnie, ale się martwię. Czy to prawdziwe?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Spotkanie zaplanowane na 10:00, a w kalendarzu widnieje na 9:00. Skąd godzina różnicy?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mam alias obsługi klienta - maile do mnie docierają, ale nie mogę z niego wysyłać.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wiadomość z Outlooka zawiera dziwny link do 'aktualizacji'. Nie będę w niego klikać.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Załącznik ZIP nie chce się rozpakować. Plik może być uszkodzony.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mam dostęp do grupy mailowej HR, ale nie widzę żadnych maili z ubiegłego miesiąca.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Na Macu maile w Outlooku się nie pobierają. Na Windowsie wszystko działa.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Ustawiłem nieobecność, ale autoresponder wysyła duplikaty. Ktoś dostaje trzy wiadomości.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Nie mogę dodać osoby do spotkania w kalendarzu. System mówi że nie ma jej w kontaktach firmy.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Dokumenty z OneDrive w mailu się nie otwierają, błąd 404.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Wiadomość z 'Biura Obsługi Klienta' prosi o numer PESEL. Wygląda całkiem podejrzanie.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Kanał Teams dla projektów zawiesza się kiedy jest ponad 20 osób. To sieć czy aplikacja?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mam dostęp do skrzynki wspólnej dla finansów, ale maile nie synchronizują się na telefonie.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Mam limit 30 GB, a system twierdzi że mam 35 GB maili. Jak to możliwe?",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Spotkanie z klientem - zaproszenie się nie wysłało, twierdzą że nic nie dostali.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "W Slacku moja nazwa użytkownika wyświetla się dziwnie dla innych.",
+      "category": "Email i Komunikacja"
+    },
+    {
+      "text": "Potrzebujemy zainstalować Microsoft Project na komputerach zespołu projektowego. Kto może to zrobić?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mam nową licencję Office 365, ale nie wiem jak ją aktywować na moim laptopie.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę prosić o zainstalowanie Visual Studio Code na moim stanowisku pracy?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Potrzebny jest klucz licencyjny do WinRAR. Gdzie go można znaleźć?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Proszę o zainstalowanie najnowszej wersji naszej aplikacji CRM do testów.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Muszę skonfigurować dostęp do repozytorium GitHub z mojej maszyny. Co trzeba zrobić?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Sterowniki do nowej drukarki w dziale nie są zainstalowane. Mogę prosić o pomoc?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mam uprawnienia do zainstalowania oprogramowania na swoim komputerze służbowym?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Przenoszę się na nowy komputer, potrzebuję migracji wszystkich danych i aplikacji.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Podczas instalacji Photoshopa otrzymuję błąd. Mogę prosić o wsparcie?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Jak skonfigurować VPN na mojej stacji roboczej? Nie mogę się połączyć z siecią firmową.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Patch do AutoCAD 2024 musi być zainstalowany do czwartku na wszystkich stanowiskach.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Chciałbym zainstalować Docker na swoim laptopie, ale mam pytania dotyczące konfiguracji.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Otrzymałem nowy kod licencyjny do SAP, ale nie mogę go aktywować. Potrzebna pomoc.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę zainstalować Pythona 3.11 na komputerze firmowym do celów analitycznych?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Sterownik karty graficznej się zaktualizował i teraz mam problemy. Mogę prosić o przywrócenie poprzedniego?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowa osoba w zespole wymaga pełnej konfiguracji środowiska pracy do jutra.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy trzeba mieć dostęp administratora, żeby zainstalować narzędzia programistyczne?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Miałem na starym komputerze zainstalowanego Excela, chciałbym przenieść licencję na nowy.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Proszę o zainstalowanie nowej wersji Node.js na serwerze deweloperskim.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nie mogę znaleźć konfiguracji SSL do naszego serwera webowego. Potrzebna pomoc.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Odinstalujcie mi stare wersje Javy z komputera, zostawiając tylko najnowszą.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Potrzebuję zainstalować Slacka i skonfigurować integrację z naszą aplikacją.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Drukarka HP nie drukuje. Chyba sterownik się uszkodził. Mogę prosić o przeinstalowanie?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Jaka jest procedura aktywacji nowej licencji JetBrains IntelliJ?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mógłbyś zainstalować Git Bash na moim stanowisku? Potrzebuję go do pracy.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Powiedziano mi, że muszę zainstalować nową wersję systemu operacyjnego na laptopie.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nie mam uprawnień, żeby zainstalować biblioteki Pythona przez pip. Co powinienem zrobić?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Jaki system operacyjny jest wymagany dla oprogramowania ERP w wersji 8.3?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Chciałbym poprawić konfigurację bazy PostgreSQL na mojej maszynie deweloperskiej.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę prosić o instalację pełnego pakietu Office na komputerach w hali produkcji?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Tablet firmowy wymaga konfiguracji dostępu do firmowej sieci WiFi.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Moja licencja Adobe Creative Cloud wygasła. Jak ją odnowić i zainstalować ponownie?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Potrzebny jest sterownik do monitora zewnętrznego, bo system go nie rozpoznaje.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowy pracownik musi mieć zainstalowanego Cisco AnyConnect VPN do pracy zdalnej.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy da się zainstalować RStudio na komputerze bez dostępu administratora?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Chciałbym przeprowadzić migrację plików z dysku D na nowy serwer.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Do piątku trzeba zainstalować najnowszy patch bezpieczeństwa Windows na wszystkich maszynach.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mogę prosić o konfigurację certyfikatu dla naszego serwera HTTPS?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Odinstalujcie aplikację CRM ze starej maszyny, bo będę korzystać z nowego laptopa.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Potrzebne jest zainstalowanie specjalnego oprogramowania do monitorowania sieci.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mam problem z aktywacją Windows 10. Czy mogę prosić o nowy klucz licencyjny?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Sterowniki karty dźwiękowej się uszkodziły. Mogę prosić o przeinstalowanie?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Potrzebuję zainstalować narzędzie do monitorowania czasu pracy na moim stanowisku.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Jak skonfigurować dostęp do Google Cloud Platform z mojej maszyny deweloperskiej?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę zainstalować najnowszą wersję MySQL na laptopie do testów bazy danych?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowa drukarka wielofunkcyjna wymaga sterowników. Gdzie mogę je znaleźć?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Licencja na nasze oprogramowanie CAD została przedłużona. Trzeba zaktualizować wszystkie stacje.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nie mogę zainstalować Microsoft Teams bez dostępu administratora.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Przenoszę wszystkie projekty na nowy dysk SSD. Jak najlepiej to zrobić?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy można zainstalować dwie wersje Pythona na jednym komputerze?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowy serwer wymaga kompletnej konfiguracji oprogramowania do uruchomienia.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mogę prosić o zainstalowanie sterowników USB do moich urządzeń peryferyjnych?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Aktualizacja systemu nie przeszła poprawnie. Mogę prosić o przywrócenie poprzedniej wersji?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Chciałbym zainstalować Kubernetes na serwerze testowym do eksperymentów.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Konfiguracja poczty Outlook wymaga ustawienia certyfikatu. Jak to zrobić?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę prosić o licencję CorelDRAW i jej zainstalowanie na moim komputerze?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Stary dysk jest wymieniany. Potrzebuję migracji całego systemu na nowy dysk.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nie mogę zainstalować Oracle Database ze względu na wymagania pamięci RAM.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowy skaner wymaga zainstalowania oprogramowania do OCR. Mogę prosić o pomoc?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy trzeba mieć klucz produktu, żeby zainstalować Windows Server 2022?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Chciałbym zainstalować oprogramowanie do edycji wideo na nowym komputerze.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Konfiguracja firewalla uniemożliwia mi dostęp do niektórych usług. Kto może to zmienić?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mogę prosić o zainstalowanie pakietu narzędzi DevOps na moim stanowisku?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowy laptop wymaga pełnej konfiguracji oprogramowania biznesowego i systemowego.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę zainstalować bibliotekę TensorFlow do eksperymentów z uczeniem maszynowym?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Sterownik myszki bezprzewodowej przestał działać. Mogę prosić o przeinstalowanie?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Otrzymaliśmy nową licencję Autodesk Revit dla zespołu architektonicznego.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Jak zainstalować i skonfigurować Jenkinsa na moim serwerze CI/CD?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nie mogę zalogować się do aplikacji po instalacji. Czy to problem konfiguracji?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Chciałbym przenieść dane z dysku twardego do chmury. Jak najlepiej to zrobić?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę prosić o zainstalowanie oprogramowania do zarządzania projektami dla zespołu?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Potrzebna jest konfiguracja dostępu do bazy danych dla nowej aplikacji.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę zainstalować Figma Desktop na komputerze firmowym?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Muszę przenieść wszystkie certyfikaty na nowy komputer. Jak to zrobić bezpiecznie?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowy monitor wymaga konfiguracji rozdzielczości. Gdzie zmienić te ustawienia?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mogę prosić o zainstalowanie oprogramowania do szyfrowania dysków?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę zainstalować wersję beta oprogramowania do testów przed wydaniem?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nie mogę aktywować Windows. Mogę prosić o pomoc z kluczem?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Czy mogę zainstalować maszynę wirtualną na komputerze do celów testowych?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Potrzebna jest migracja całego serwera na nową infrastrukturę chmurową.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mam problem z aktualizacją oprogramowania. Mogę prosić o wsparcie przy reinstalacji?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Nowy czytnik kodów kreskowych wymaga zainstalowania oprogramowania integracyjnego.",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Mogę prosić o zainstalowanie wszystkich wymaganych bibliotek dla aplikacji Pythona?",
+      "category": "Instalacja i Konfiguracja"
+    },
+    {
+      "text": "Jak mogę zmienić swoje hasło w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie znajdę instrukcję obsługi nowego modułu raportowania?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie są godziny dostępności zespołu wsparcia?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy system będzie niedostępny w przyszłym tygodniu z powodu aktualizacji?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Chciałbym przejść szkolenie z zarządzania projektami - jak się na nie zapisać?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jaka jest polityka dotycząca dostępu do dokumentów poufnych?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę korzystać z aplikacji mobilnej na Androidzie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto jest administratorem systemu CRM w naszym oddziale?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Ile czasu zwykle trwa odpowiedź na zgłoszenie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak dodać nowego użytkownika do projektu w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie mogę znaleźć FAQ dotyczące modułu finansowego?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy istnieje możliwość integracji z naszym systemem ERP?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie uprawnienia są wymagane do edycji raportu rocznego?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kiedy planowana jest następna aktualizacja oprogramowania?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Potrzebuję pomocy w nauce korzystania z dashboardu analitycznego.",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto zajmuje się sprawami związanymi z licencjonowaniem?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę pracować offline i zsynchronizować dane później?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak skontaktować się z zespołem wsparcia w trybie awaryjnym?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie są procedury bezpieczeństwa przy usuwaniu danych użytkownika?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie znajduje się dokumentacja API naszego systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy można dostosować wygląd interfejsu użytkownika?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jaki jest czas reakcji wsparcia na zgłoszenia pilne?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak zalogować się do systemu, jeśli zapomniałem loginu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy system wspiera eksport danych do formatu Excel?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto powinien zatwierdzać wnioski urlopowe w naszym dziale?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie znaleźć poradnik krok po kroku do konfiguracji mailingu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy prace serwisowe obejmują weekendy lub noce?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Chciałbym dowiedzieć się więcej o dostępnych szablonach dokumentów.",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak przyznać komuś dostęp tylko do odczytu dla wybranych modułów?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy pracownik na home office może korzystać ze wszystkich funkcji systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie działania wymagają zatwierdzenia kierownika?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie mogę znaleźć listę obsługiwanych przeglądarek internetowych?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy jest możliwość zaplanowania naprawy na konkretną godzinę?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak aktywować nową funkcję kalendarza zespołowego?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto może delegować obowiązki innemu pracownikowi w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę zaimportować dane z poprzedniego systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie są limity przechowywania plików na serwerze?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie uzyskać potwierdzenie ukończenia szkolenia z bezpieczeństwa IT?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak sprawdzić historię zmian w dokumencie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę wysyłać zgłoszenia spoza sieci firmowej?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto zarządza prawami dostępu do informacji poufnych?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie znaleźć przewodnik do prowadzenia narad w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Co ile czasu system automatycznie tworzy kopie zapasowe?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak włączyć powiadomienia o nowych wiadomościach?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie są procedury dla osób pracujących nad projektami międzynarodowymi?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy istnieje możliwość integracji z moim osobistym kalendarzem?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie mogę zgłosić pomysł na ulepszenie systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto odpowiada za archiwizację starych projektów?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak ustawić zastępstwo dla poczty na czas nieobecności?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę pracować nad dwoma projektami jednocześnie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie dane są wymagane przy tworzeniu nowego zgłoszenia?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie znaleźć aktualną wersję regulaminu użytkownika?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy dostępna jest wersja systemu dla osób niedowidzących?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto może edytować szablony raportów w naszym dziale?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak zmienić język interfejsu na angielski?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę usunąć swoje konto i wyeksportować dane?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie są wymagania sprzętowe do bezproblemowej pracy w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie mogę znaleźć porady dotyczące poprawy wydajności?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy można ustawić przypomnienie o zbliżającym się terminie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto zatwierdza wnioski o dodatkowe zasoby dla projektu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak skonfigurować automatyczne archiwizowanie starych maili?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę pracować z systemem na tablecie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie procedury obowiązują przy przeniesieniu pracownika do innego działu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie znaleźć statystyki dotyczące wykorzystania systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy można skonfigurować alerty o ważnych zmianach w projekcie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto odpowiada za bezpieczeństwo danych osobowych w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak odinstalować poprzednią wersję aplikacji?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy system wspiera pracę wielojęzyczną dla zespołów międzynarodowych?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie są normy czasowe dla różnych typów zgłoszeń?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie mogę znaleźć dobre praktyki korzystania z systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę ustawić limit wydatków dla swojego projektu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto prowadzi szkolenia dla nowych użytkowników systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak sprawdzić dostępność zasobów na określony termin?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy istnieje program nagród za znalezienie błędów w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie mogę zobaczyć wszystkie moje przydzielone zadania?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie dokumenty są wymagane do otwarcia nowego zlecenia?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę zsynchronizować system z moim smartfonem?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto ma prawo do eksportu danych z systemu?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie znaleźć informacje o świadczeniach pracowniczych?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy system automatycznie wysyła potwierdzenie odebrania zgłoszenia?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jakie są zasady dotyczące prywatności komunikacji w systemie?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Jak mogę przesłać swoją opinię o nowych funkcjach?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy można pracować w trybie offline na urządzeniu mobilnym?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Kto odpowiada za aktualizację procedur bezpieczeństwa?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie mogę znaleźć formularz wniosku o urlop?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Czy mogę przekazać zgłoszenie innemu pracownikowi wsparcia?",
+      "category": "Zapytanie Ogolne"
+    },
+    {
+      "text": "Gdzie uzyskać dostęp do archiwalnych raportów?",
+      "category": "Zapytanie Ogolne"
+    }
+  ]
+}

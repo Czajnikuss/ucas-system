@@ -11,10 +11,11 @@ Tags Layer to szybka warstwa klasyfikacji oparta na słowach kluczowych, zoptyma
 - Pełne wsparcie dla UTF-8
 
 ### Ekstrakcja Słów Kluczowych
-- TF-IDF dla ważności słów
-- Analiza dyskryminacyjna
+- TF-IDF (TF-ICF) na poziomie kategorii dla ważności słów
 - N-gramy (1-2 słowa)
-- Metryki częstotliwości
+- **Filtr Inverse-Category-Frequency (ICF)** — słowa będące top-keywordem w ≥ połowie kategorii
+  (neutralne, np. „aplikacja", „proszę") są odrzucane, bo nie rozróżniają kategorii i powodowały
+  fałszywe trafienia. Dzięki temu warstwa może bezpiecznie decydować na pewnym trafieniu.
 
 ### Klasyfikacja
 - Dokładne dopasowanie słów

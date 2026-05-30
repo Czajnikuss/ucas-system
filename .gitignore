@@ -20,6 +20,17 @@ secrets/
 *.sql
 backup*.sql
 
+# Generated source/context inventory dumps (do NOT commit)
+repo_context.txt
+ucas_dump.txt
+*_dump.txt
+*_context.txt
+
+# Editor / migration backup files
+*.bak
+*.backup
+*.backup_*
+
 # Runtime data
 volumes/postgres/*
 volumes/redis/dump.rdb

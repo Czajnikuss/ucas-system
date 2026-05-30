@@ -167,7 +167,7 @@ services:
       - "6379:6379"
     restart: unless-stopped
     volumes:
-      - ./volumes/redis:/data
+      - redis:/data
 
   dashboard-admin:
     build: ./services/dashboard-admin
@@ -178,6 +178,20 @@ services:
     volumes:
       - ./services/dashboard-admin:/app
     command: ["streamlit", "run", "app.py", "--server.port", "8080", "--server.address", "0.0.0.0"]
+
+  dashboard-hil:
+    build: ./services/dashboard-hil
+    container_name: ucas-dashboard-hil
+    depends_on:
+      - hil-layer
+    environment:
+      - HIL_LAYER_URL=http://hil-layer:8040
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    volumes:
+      - ./services/dashboard-hil:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8081", "--reload"]
 
 volumes:
   ucas-categorizers-data:

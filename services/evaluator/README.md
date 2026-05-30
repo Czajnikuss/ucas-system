@@ -155,10 +155,10 @@ Scoring a sample:
 import requests
 
 response = requests.post(
-    "http://localhost:8050/score_sample",
+    "http://localhost:8060/score_batch",
     json={
-        "sample_id": "sample-uuid",
-        "categorizer_id": "categorizer-uuid"
+        "categorizer_id": "categorizer-uuid",
+        "batch_size": 10
     }
 )
 print(response.json())
@@ -168,7 +168,7 @@ Checking curation status:
 
 ```python
 response = requests.get(
-    "http://localhost:8050/curation_status/categorizer-uuid"
+    "http://localhost:8060/curation_status/categorizer-uuid"
 )
 print(response.json())
 ```
