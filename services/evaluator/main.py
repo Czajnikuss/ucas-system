@@ -135,6 +135,17 @@ async def run_curation_pipeline(categorizer_id: uuid.UUID, db: Session):
     db.commit()
     print(f"  ✓ Archived {len(low_quality_samples)} low-quality samples", flush=True)
 
+    # Domkniecie petli samodoskonalenia: po kuracji re-trenuj modele na aktywnym
+    # (wykurowanym + uzupelnionym o korekty HIL) zbiorze. Best-effort.
+    if config.get('quality.curation.auto_retrain', True):
+        orch = config.get('orchestrator.retrain_url', 'http://orchestrator:8001')
+        try:
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                r = await client.post(f"{orch}/categorizers/{categorizer.categorizer_id}/retrain")
+                print(f"  ↻ Auto-retrain [{r.status_code}] dla {categorizer.categorizer_id}", flush=True)
+        except Exception as e:
+            print(f"  🔴 Auto-retrain blad: {e}", flush=True)
+
 async def build_historical_context(categorizer_id: uuid.UUID, db: Session) -> List[QualitySample]:
     bg_samples_db = db.query(TrainingSample).filter(
         TrainingSample.categorizer_id == categorizer_id,
