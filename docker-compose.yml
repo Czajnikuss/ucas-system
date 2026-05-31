@@ -130,7 +130,7 @@ services:
       - "11434:11434"
     restart: unless-stopped
     volumes:
-      - ./volumes/ollama:/root/.ollama
+      - ollama:/root/.ollama
     deploy:
       resources:
         limits:
@@ -198,4 +198,6 @@ volumes:
   postgres:
     driver: local
   redis:
+    driver: local
+  ollama:
     driver: local

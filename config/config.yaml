@@ -33,7 +33,9 @@ orchestrator:
       url: "http://llm-layer:8030"
       timeout: 60
       enabled: true
-      model: "phi3:mini"
+      # Maly model z dobrym polskim (Apache-2.0). Tier wg VRAM: 4GB->qwen2.5:3b,
+      # 8GB->qwen2.5:7b lub Bielik-11B, CPU->qwen2.5:3b. phi3:mini bylo slabe w PL.
+      model: "qwen2.5:3b"
     
     rag:
       url: "http://rag-service:8070"

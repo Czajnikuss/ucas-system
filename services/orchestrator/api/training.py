@@ -185,7 +185,7 @@ async def train(request: TrainRequest, db: Session = Depends(get_db)):
             try:
                 response = await client.post(
                     f"{config.get('orchestrator.layers.llm.url')}/train", 
-                    json={"categorizer_id": categorizer_id, "training_data": request.training_data, "model": "phi3:mini", "fallback_category": request.fallback_category, **(request.llm_config or {})}, 
+                    json={"categorizer_id": categorizer_id, "training_data": request.training_data, "model": config.get('orchestrator.layers.llm.model', 'phi3:mini'), "fallback_category": request.fallback_category, **(request.llm_config or {})},
                     timeout=60.0
                 )
                 results["llm"] = response.json()
