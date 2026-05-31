@@ -31,6 +31,11 @@ ucas_dump.txt
 *.backup
 *.backup_*
 
+# Scratch wyjscia generatora danych (surowa pula przed kuracja)
+_gen_pool.json
+pool.json
+curated.json
+
 # Runtime data
 volumes/postgres/*
 volumes/redis/dump.rdb

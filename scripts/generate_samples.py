@@ -11,27 +11,30 @@ dwuznaczny ogon i near-duplikaty, ZACHOWUJĄC różnorodność.
 Tylko biblioteka standardowa (urllib + json) — bez zależności, bez numpy na hoście.
 Cała część wektorowa dzieje się w kontenerze evaluatora.
 
+Różnorodność: rotujemy podtematy per wywołanie i podbijamy temperaturę gdy model zaczyna
+się powtarzać; `--seed-pool` pozwala akumulować (top-up) z wcześniejszej puli.
+
 Pełna pętla:
     python scripts/generate_samples.py --spec scripts/helpdesk_spec.json \\
-        --endpoint http://192.168.0.164:1234/v1 --model local-model \\
-        --n 150 --out pool.json --curate-url http://localhost:8060 --curated-out curated.json
+        --endpoint http://localhost:1234/v1 --model qwopus3.5-9b-v3 \\
+        --n 300 --out pool.json --curate-url http://localhost:8060 --curated-out curated.json
 
-Spec (JSON):
-    {
-      "name": "Demo-Helpdesk-Routing",
-      "language": "polski",
-      "domain": "zgłoszenia helpdesk IT",
-      "fallback_category": "Inne",
-      "layers": ["tags","xgboost","llm","hil"],
-      "categories": { "Nazwa Kategorii": ["podtemat 1", "podtemat 2", ...], ... }
-    }
+Spec (JSON): patrz scripts/helpdesk_spec.json
 """
 import argparse
 import json
+import os
 import re
 import sys
 import time
 import urllib.request
+
+# Windows: konsola cp1252 nie koduje polskich znakow w print() -> wymuszamy UTF-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 
 def _post_json(url: str, payload: dict, timeout: float = 120.0, headers: dict | None = None) -> dict:
@@ -60,59 +63,86 @@ def _extract_json(text: str):
     return None
 
 
-def generate_for_category(endpoint, model, category, subtopics, language, domain, count, batch, temperature):
-    """Woła model w paczkach aż uzbiera `count` unikalnych próbek dla jednej kategorii."""
+def _norm(t: str) -> str:
+    return re.sub(r"\s+", " ", t.strip().lower())
+
+
+def generate_for_category(endpoint, model, category, subtopics, language, domain,
+                          count, batch, temperature, seed_texts=None):
+    """Woła model w paczkach aż uzbiera `count` unikalnych próbek. Rotuje podtematy i podbija
+    temperaturę gdy model się powtarza. Może wystartować od `seed_texts` (akumulacja)."""
     url = endpoint.rstrip("/") + "/chat/completions"
     seen = set()
     samples = []
-    subtopic_hint = ""
-    if subtopics:
-        subtopic_hint = "Rozłóż próbki równomiernie po podtematach: " + "; ".join(subtopics) + "."
+    for t in (seed_texts or []):
+        k = _norm(t)
+        if len(t.strip()) >= 12 and k not in seen:
+            seen.add(k)
+            samples.append(t.strip())
 
+    subs = subtopics or [category]
     system = (
         f"Jesteś generatorem syntetycznych danych treningowych ({domain}, język {language}). "
         f"Tworzysz realistyczne, RÓŻNORODNE zgłoszenia jednej kategorii. Zwracasz wyłącznie JSON."
     )
-    attempts = 0
-    while len(samples) < count and attempts < count // max(1, batch) + 8:
-        attempts += 1
+
+    attempt = 0
+    max_attempts = max(20, (count // max(1, batch)) * 4)
+    stall = 0
+    temp = temperature
+    while len(samples) < count and attempt < max_attempts:
+        # Rotacja okna podtematow -> kazde wywolanie eksploruje inny obszar.
+        start = (attempt * 3) % len(subs)
+        win = subs[start:start + 3] or subs[:3]
+        subtopic_hint = "Skup się na podtematach: " + "; ".join(win) + "."
         user = (
             f'Wygeneruj {batch} różnych, realistycznych zgłoszeń kategorii "{category}". '
             f"{subtopic_hint} "
             "Zróżnicuj długość (5-30 słów), ton (sfrustrowany, neutralny, uprzejmy, formalny, potoczny) "
-            "i szczegóły (nazwy, numery, działy). Pierwsza osoba. NIE powtarzaj tych samych fraz początkowych. "
-            'Zwróć WYŁĄCZNIE JSON: {"samples": ["...", "...", ...]}'
+            "i szczegóły (nazwy, numery, działy). Pierwsza osoba. NIE powtarzaj zgłoszeń z wcześniejszych "
+            'odpowiedzi. Zwróć WYŁĄCZNIE JSON: {"samples": ["...", "...", ...]}'
         )
+        before = len(samples)
         try:
             resp = _post_json(url, {
                 "model": model,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-                "temperature": temperature,
-                "response_format": {"type": "json_object"},
+                "temperature": round(temp, 2),
             }, timeout=180.0)
             content = resp["choices"][0]["message"]["content"]
         except Exception as e:
             print(f"   ! [{category}] błąd wywołania: {e}", file=sys.stderr)
             time.sleep(1.0)
+            attempt += 1
             continue
 
         parsed = _extract_json(content)
-        batch_items = []
+        items = []
         if isinstance(parsed, dict):
-            batch_items = parsed.get("samples") or parsed.get("texts") or []
+            items = parsed.get("samples") or parsed.get("texts") or []
         elif isinstance(parsed, list):
-            batch_items = parsed
+            items = parsed
 
-        for it in batch_items:
+        for it in items:
             txt = (it.get("text") if isinstance(it, dict) else it)
             if not isinstance(txt, str):
                 continue
             txt = txt.strip()
-            key = re.sub(r"\s+", " ", txt.lower())
-            if len(txt) >= 12 and key not in seen:
-                seen.add(key)
+            k = _norm(txt)
+            if len(txt) >= 12 and k not in seen:
+                seen.add(k)
                 samples.append(txt)
-        print(f"   [{category}] {len(samples)}/{count}")
+
+        attempt += 1
+        if len(samples) == before:
+            stall += 1
+            temp = min(1.25, temp + 0.07)   # podbij roznorodnosc gdy utyka
+        else:
+            stall = 0
+        print(f"   [{category}] {len(samples)}/{count} (temp={temp:.2f})")
+        if stall >= 6:   # twardy bezpiecznik na nieuleczalne powtarzanie
+            print(f"   [{category}] stop (powtarzanie sie modelu)")
+            break
     return samples[:count]
 
 
@@ -124,6 +154,7 @@ def main():
     ap.add_argument("--n", type=int, default=150, help="Ile próbek na kategorię (over-generacja)")
     ap.add_argument("--batch", type=int, default=25, help="Ile próbek na jedno wywołanie LLM")
     ap.add_argument("--temperature", type=float, default=0.9)
+    ap.add_argument("--seed-pool", default=None, help="Istniejąca pula JSON do akumulacji (top-up)")
     ap.add_argument("--out", default="pool.json", help="Plik wyjściowy puli (przed kuracją)")
     ap.add_argument("--curate-url", default=None, help="Jeśli podany, POST puli do evaluatora (np. http://localhost:8060)")
     ap.add_argument("--curated-out", default="curated.json", help="Plik wyjściowy po kuracji")
@@ -136,11 +167,19 @@ def main():
     domain = spec.get("domain", "zgłoszenia")
     categories = spec["categories"]
 
+    seed_by_cat = {}
+    if args.seed_pool and os.path.exists(args.seed_pool):
+        sp = json.load(open(args.seed_pool, encoding="utf-8"))
+        for d in sp.get("training_data", []):
+            seed_by_cat.setdefault(d["category"], []).append(d["text"])
+        print(f"Seed-pool: {sum(len(v) for v in seed_by_cat.values())} próbek z {args.seed_pool}")
+
     pool = []
     for category, subtopics in categories.items():
         print(f"== Generuję kategorię: {category} ==")
         texts = generate_for_category(args.endpoint, args.model, category, subtopics or [],
-                                      language, domain, args.n, args.batch, args.temperature)
+                                      language, domain, args.n, args.batch, args.temperature,
+                                      seed_texts=seed_by_cat.get(category))
         pool.extend({"text": t, "category": category} for t in texts)
 
     pool_doc = {
