@@ -1,52 +1,60 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import numpy as np
 from typing import List
 from pydantic import BaseModel
+
 
 class Sample(BaseModel):
     text: str
     category: str
     embedding: List[float]
 
-def calculate_cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
-    if np.all(vec1 == 0) or np.all(vec2 == 0):
-        return 0.0
-    dot_product = np.dot(vec1, vec2)
-    norm1 = np.linalg.norm(vec1)
-    norm2 = np.linalg.norm(vec2)
-    
-    if norm1 == 0 or norm2 == 0:
-        return 0.0
-        
-    return float(dot_product / (norm1 * norm2))
 
-def score_sample_quality(new_sample: Sample, historical_samples: List[Sample]) -> float:
-    new_vec = np.array(new_sample.embedding)
-    
-    # 🎯 FIX: Detekcja awarii wektorów. Jeśli pobrano zerowy wektor z powodu timeoutu, ocal próbkę z heurystyką.
-    if np.all(new_vec == 0):
-        return min(0.99, len(new_sample.text) / 250.0 + 0.15)
-        
-    if not historical_samples:
+def _heuristic(text: str) -> float:
+    """Awaryjna ocena gdy brak użytecznego wektora (np. timeout embeddings-service)."""
+    return min(0.99, len(text) / 250.0 + 0.15)
+
+
+def score_sample_quality(new_sample: Sample, historical_samples: List[Sample], k: int = 10) -> float:
+    """
+    Jakość próbki = **zgodność etykiet w sąsiedztwie k-NN** w przestrzeni embeddingów
+    (ważona podobieństwem). Dla każdej próbki patrzymy na jej k najbliższych sąsiadów spośród
+    WSZYSTKICH kategorii i liczymy, jaka część (ważona similarity) ma tę samą etykietę.
+
+    Dlaczego nie centroid: centroid karze różnorodność — próbka nietypowa, ale poprawna
+    (np. inny podtemat tej samej kategorii) jest daleko od centroidu i dostaje niską ocenę.
+    k-NN zachowuje takie próbki (mają sąsiadów tej samej klasy), a wyłapuje realnie błędne /
+    dwuznaczne (sąsiedzi należą do innych klas).
+
+    Zwraca wartość w [0.0, 1.0]: 1.0 = sąsiedztwo czyste, 0.0 = sami obcy (kandydat do archiwizacji).
+    """
+    new_vec = np.asarray(new_sample.embedding, dtype=np.float64)
+    new_norm = np.linalg.norm(new_vec)
+    if new_norm == 0:
+        return _heuristic(new_sample.text)
+
+    # Wykluczamy samą próbkę (po tekście) i próbki z zerowym wektorem.
+    others = [
+        s for s in historical_samples
+        if s.text != new_sample.text and np.linalg.norm(np.asarray(s.embedding)) > 0
+    ]
+    if not others:
         return 1.0
-        
-    same_category_samples = [s for s in historical_samples if s.category == new_sample.category]
-    
-    if not same_category_samples:
-        return 0.8
-        
-    embeddings_matrix = np.array([s.embedding for s in same_category_samples])
-    centroid = np.mean(embeddings_matrix, axis=0)
-    
-    # 🎯 FIX: Jeśli wektory historii też z jakiegoś powodu były zerami
-    if np.all(centroid == 0):
-        return min(0.99, len(new_sample.text) / 250.0 + 0.15)
-    
-    sim = calculate_cosine_similarity(new_vec, centroid)
-    
-    baseline = 0.35
-    if sim < baseline:
+
+    H = np.asarray([s.embedding for s in others], dtype=np.float64)      # (M, D)
+    cats = np.asarray([s.category for s in others])
+    H_norms = np.linalg.norm(H, axis=1)
+
+    # Cosine similarity (evaluator nie żąda znormalizowanych wektorów, więc normalizujemy tu).
+    sims = (H @ new_vec) / (H_norms * new_norm)
+
+    kk = int(min(k, sims.shape[0]))
+    top_idx = np.argpartition(-sims, kk - 1)[:kk]
+    top_sims = np.clip(sims[top_idx], 0.0, None)   # ujemne podobieństwo nie głosuje
+    top_cats = cats[top_idx]
+
+    total_w = float(top_sims.sum())
+    if total_w <= 0.0:
         return 0.0
-        
-    normalized_score = (sim - baseline) / (1.0 - baseline)
-    return min(max(normalized_score, 0.0), 1.0)
+    same_w = float(top_sims[top_cats == new_sample.category].sum())
+    return same_w / total_w

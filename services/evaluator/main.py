@@ -186,7 +186,7 @@ async def background_scoring_worker():
                             
                             try:
                                 score = score_sample_quality(new_sample, hist_samples)
-                                reason = f"Odległość od centroidu (Numpy): {score:.2f}"
+                                reason = f"Zgodność etykiet k-NN: {score:.2f}"
                             except Exception as e:
                                 score = min(0.99, len(db_sample.text) / 250.0 + 0.15)
                                 reason = f"Ocena heurystyczna (błąd algorytmu): {score:.2f}"
@@ -351,7 +351,7 @@ async def score_batch_endpoint(request: ScoreBatchRequest, db: Session = Depends
             
             try:
                 score = score_sample_quality(new_sample, hist_samples)
-                reason = f"Centroid klasy (Hurtowo): {score:.2f}"
+                reason = f"Zgodność etykiet k-NN (hurtowo): {score:.2f}"
             except Exception as e:
                 score = min(0.99, len(db_sample.text) / 250.0 + 0.15)
                 reason = f"Heurystyka awaryjna: {score:.2f}"
