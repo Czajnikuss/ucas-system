@@ -103,8 +103,8 @@ quality:
   # Background Worker
   background_scoring:
     enabled: true
-    batch_size: 50          # ile probek scorowac na cykl (demo: szybko nadrabia zalegle)
-    interval_seconds: 20    # demo: responsywna petla (produkcyjnie 300)
+    batch_size: 50          # ile probek scorowac na cykl
+    interval_seconds: 300   # cykl workera jakosci
     llm_timeout: 30
   
   # Resource Limits
@@ -115,7 +115,7 @@ quality:
   # Curation
   curation:
     enabled: true
-    trigger_threshold: 3    # demo: kilka korekt HIL wyzwala kuracje + auto-retrening (produkcyjnie 50)
+    trigger_threshold: 50   # ile nowych nieocenionych probek wyzwala kuracje + auto-retrening
     dataset_max_size: 800
     min_quality_score: 0.1
     auto_retrain: true      # po kuracji wolaj orchestrator /retrain (domkniecie petli)
