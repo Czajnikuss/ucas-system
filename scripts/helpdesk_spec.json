@@ -1,0 +1,19 @@
+{
+  "name": "Demo-Helpdesk-Routing",
+  "description": "Routing zgłoszeń helpdesk IT (8 kategorii). Dane syntetyczne, bezpieczne do udostępnienia.",
+  "language": "polski",
+  "domain": "zgłoszenia helpdesk IT od pracowników do działu IT",
+  "fallback_category": "Inne",
+  "layers": ["tags", "xgboost", "llm", "hil"],
+  "hil_config": {"enabled": true, "tags_threshold": 0.7, "xgboost_threshold": 0.6, "llm_threshold": 0.8},
+  "categories": {
+    "Dostep i Konto": ["nie moge sie zalogowac", "reset hasla", "konto zablokowane", "2FA/MFA nie dziala", "nowe konto dla pracownika", "uprawnienia do zasobu", "haslo wygaslo", "SSO / sesja"],
+    "Platnosci i Faktury": ["bledna kwota na fakturze", "brak faktury", "duplikat faktury", "zmiana danych/NIP", "odrzucona platnosc", "zwrot/nadplata", "subskrypcja/odnowienie", "zaksiegowanie przelewu"],
+    "Blad Aplikacji": ["aplikacja sie zawiesza", "blad 500", "bialy ekran po aktualizacji", "wyjatek/stacktrace", "nie zapisuje danych", "eksport/import nie dziala", "funkcja po aktualizacji", "synchronizacja modulow"],
+    "Sprzet": ["laptop sie nie wlacza", "drukarka", "monitor", "klawiatura/mysz", "stacja dokujaca", "bateria/zasilacz", "dysk/RAM/przegrzewanie", "kamera/mikrofon/glosniki"],
+    "Siec i Lacznosc": ["brak internetu", "VPN nie laczy", "WiFi slaby sygnal", "wolne lacze", "brak dostepu do zasobu sieciowego", "firewall/blokada", "drukarka sieciowa niewidoczna", "timeout polaczenia"],
+    "Email i Komunikacja": ["nie wysyla/odbiera maili", "skrzynka pelna", "spam/phishing", "kalendarz/spotkania", "Teams/Slack", "podpis/autoresponder", "lista dystrybucyjna", "zalaczniki"],
+    "Instalacja i Konfiguracja": ["prosba o instalacje programu", "licencja/aktywacja", "aktualizacja/patch", "konfiguracja narzedzia", "sterowniki", "uprawnienia administratora", "migracja na nowy komputer", "konfiguracja srodowiska"],
+    "Zapytanie Ogolne": ["jak zrobic X", "gdzie instrukcja", "godziny wsparcia", "dostepnosc systemu", "prosba o szkolenie", "polityka/procedura", "czy cos jest mozliwe", "pytanie informacyjne"]
+  }
+}

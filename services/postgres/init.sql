@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS classifications (
     is_fallback BOOLEAN DEFAULT FALSE,
     processing_time_ms FLOAT,
     cascade_results JSONB,
+    llm_prompt TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

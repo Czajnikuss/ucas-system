@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 import httpx
 import json
 import sys
+import re
 
 app = FastAPI(
     title="UCAS LLM Layer",
@@ -174,6 +175,7 @@ async def classify(request: ClassifyRequest):
                 "model": model,
                 "prompt": prompt,
                 "stream": False,
+                "format": "json",  # wymuszamy poprawny JSON na wyjsciu (koniec kruchego parsowania)
                 "options": {"temperature": 0.1, "top_p": 0.9, "num_gpu": num_gpu}
             }
             
@@ -210,56 +212,81 @@ def build_classification_prompt(text: str, categories: List[str], examples: List
         all_categories.append(fallback_category)
     
     categories_str = ", ".join(all_categories)
-    examples_text = "".join([f"Text: {ex['text']}\nCategory: {ex['category']}\n\n" for ex in examples])
-    
+    examples_text = "".join([f'- "{ex["text"]}" => {ex["category"]}\n' for ex in examples])
+
     fallback_instruction = ""
     if fallback_category:
-        main_cats = ", ".join(categories)
-        fallback_instruction = f"\n\nWAŻNE: Główne kategorie to: {main_cats}\nJeśli tekst NIE pasuje jednoznacznie do żadnej z nich, sklasyfikuj go jako '{fallback_category}'."
-    
-    return f"""Jesteś zaawansowanym klasyfikatorem tekstu. Twoim zadaniem jest kategoryzacja zapytań systemowych. MUSISZ przypisać tekst do DOKŁADNIE JEDNEJ kategorii z poniższej listy: {categories_str}
+        fallback_instruction = (
+            f'\nUWAGA: jeśli tekst NIE jest zgłoszeniem pasującym do żadnej z głównych kategorii '
+            f'(np. podziękowanie, pozytywna opinia, tekst nie na temat), przypisz kategorię '
+            f'"{fallback_category}" i nadaj NISKĄ pewność (≤ 0.4).'
+        )
 
-Przykłady referencyjne:
-{examples_text}{fallback_instruction}
+    return f"""Jesteś klasyfikatorem zgłoszeń systemowych. Przypisz tekst do DOKŁADNIE JEDNEJ kategorii z listy:
+{categories_str}
+{fallback_instruction}
 
-Teraz sklasyfikuj poniższy tekst. Wybierz DOKŁADNIE JEDNĄ kategorię z listy: {categories_str}
-Tekst do klasyfikacji: {text}
+Przykłady referencyjne (tekst => kategoria):
+{examples_text}
+Tekst do sklasyfikowania:
+"{text}"
 
-Odpowiedz w TYM DOKŁADNYM formacie i niczym więcej:
-Kategoria: [wpisz dokładnie jedną kategorię]
-Pewność: [wpisz liczbę między 0.0 a 1.0]
-Uzasadnienie: [wpisz krótkie, profesjonalne uzasadnienie swojego wyboru w języku polskim]
-
-Twoja klasyfikacja:
-"""
+Zwróć WYŁĄCZNIE obiekt JSON, bez żadnego dodatkowego tekstu, w formacie:
+{{"category": "<dokładnie jedna kategoria z listy>", "confidence": <liczba 0.0-1.0>, "reasoning": "<krótkie uzasadnienie po polsku>"}}"""
 
 def parse_llm_response(response: str, valid_categories: List[str], fallback_category: Optional[str] = None) -> tuple:
-    lines = response.strip().split("\n")
     category = None
     confidence = 0.7
     reasoning = ""
-    
+
     all_valid = valid_categories.copy()
     if fallback_category and fallback_category not in all_valid:
         all_valid.append(fallback_category)
-    
-    for line in lines:
-        line = line.strip()
-        if any(k in line.lower() for k in ["category:", "kategoria:"]):
-            cat_text = line.split(":", 1)[-1].strip().strip('."\'')
-            for valid_cat in all_valid:
-                if valid_cat.lower() in cat_text.lower():
-                    category = valid_cat
-                    break
-        elif any(k in line.lower() for k in ["confidence:", "pewnosc:", "pewność:"]):
+
+    def _match_category(raw: str):
+        raw = (raw or "").strip()
+        for valid_cat in all_valid:
+            if valid_cat.lower() in raw.lower() or raw.lower() in valid_cat.lower():
+                return valid_cat
+        return None
+
+    # 1. Sciezka glowna: model jest proszony o JSON (Ollama format=json).
+    parsed = None
+    try:
+        parsed = json.loads(response)
+    except Exception:
+        m = re.search(r"\{.*\}", response, re.DOTALL)  # czasem model owinie JSON tekstem
+        if m:
             try:
-                conf_text = line.split(":", 1)[-1].strip().replace("%", "").strip()
-                confidence = float(conf_text)
-                if confidence > 1.0: confidence /= 100.0
-            except: pass
-        elif any(k in line.lower() for k in ["reasoning:", "uzasadnienie:"]):
-            reasoning = line.split(":", 1)[-1].strip()
-    
+                parsed = json.loads(m.group(0))
+            except Exception:
+                parsed = None
+
+    if isinstance(parsed, dict):
+        category = _match_category(str(parsed.get("category", "")))
+        try:
+            confidence = float(parsed.get("confidence", 0.7))
+            if confidence > 1.0:
+                confidence /= 100.0
+        except Exception:
+            confidence = 0.7
+        reasoning = str(parsed.get("reasoning", "")).strip()
+    else:
+        # 2. Fallback: stare parsowanie liniowe (gdyby format JSON zawiodl)
+        for line in response.strip().split("\n"):
+            line = line.strip()
+            if any(k in line.lower() for k in ["category:", "kategoria:"]):
+                if not category:
+                    category = _match_category(line.split(":", 1)[-1].strip().strip('."\''))
+            elif any(k in line.lower() for k in ["confidence:", "pewnosc:", "pewność:"]):
+                try:
+                    conf_text = line.split(":", 1)[-1].strip().replace("%", "").strip()
+                    confidence = float(conf_text)
+                    if confidence > 1.0: confidence /= 100.0
+                except: pass
+            elif any(k in line.lower() for k in ["reasoning:", "uzasadnienie:"]):
+                reasoning = line.split(":", 1)[-1].strip()
+
     if not category:
         if fallback_category:
             return fallback_category, 0.5, "Defaulted to fallback"

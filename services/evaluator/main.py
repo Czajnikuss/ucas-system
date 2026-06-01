@@ -55,6 +55,14 @@ class RunCurationRequest(BaseModel):
     categorizer_id: str
     force: bool = False
 
+class CuratePoolRequest(BaseModel):
+    # Drugi etap petli samodoskonalenia: kuracja over-wygenerowanej puli kandydatow.
+    training_data: List[Dict[str, str]]        # [{"text":..., "category":...}, ...]
+    min_quality: float = 0.25                  # odsiej ogon o niskiej zgodnosci k-NN (bledne/dwuznaczne)
+    dup_threshold: float = 0.97                # near-duplikaty (cosine) -> zostaw lepszy
+    cap_per_category: Optional[int] = None     # gorny limit/kategorie (None = bez limitu)
+    k: int = 10
+
 # ============================================
 # CORE LOGIC
 # ============================================
@@ -127,6 +135,17 @@ async def run_curation_pipeline(categorizer_id: uuid.UUID, db: Session):
     db.commit()
     print(f"  ✓ Archived {len(low_quality_samples)} low-quality samples", flush=True)
 
+    # Domkniecie petli samodoskonalenia: po kuracji re-trenuj modele na aktywnym
+    # (wykurowanym + uzupelnionym o korekty HIL) zbiorze. Best-effort.
+    if config.get('quality.curation.auto_retrain', True):
+        orch = config.get('orchestrator.retrain_url', 'http://orchestrator:8001')
+        try:
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                r = await client.post(f"{orch}/categorizers/{categorizer.categorizer_id}/retrain")
+                print(f"  ↻ Auto-retrain [{r.status_code}] dla {categorizer.categorizer_id}", flush=True)
+        except Exception as e:
+            print(f"  🔴 Auto-retrain blad: {e}", flush=True)
+
 async def build_historical_context(categorizer_id: uuid.UUID, db: Session) -> List[QualitySample]:
     bg_samples_db = db.query(TrainingSample).filter(
         TrainingSample.categorizer_id == categorizer_id,
@@ -156,8 +175,8 @@ async def background_scoring_worker():
     batch_size = config.get('quality.background_scoring.batch_size', 5)
     
     while background_task_running:
+        db = SessionLocal()
         try:
-            db = SessionLocal()
             categorizers = db.query(Categorizer).all()
             
             for categorizer in categorizers:
@@ -186,7 +205,7 @@ async def background_scoring_worker():
                             
                             try:
                                 score = score_sample_quality(new_sample, hist_samples)
-                                reason = f"Odległość od centroidu (Numpy): {score:.2f}"
+                                reason = f"Zgodność etykiet k-NN: {score:.2f}"
                             except Exception as e:
                                 score = min(0.99, len(db_sample.text) / 250.0 + 0.15)
                                 reason = f"Ocena heurystyczna (błąd algorytmu): {score:.2f}"
@@ -200,10 +219,12 @@ async def background_scoring_worker():
                         
                 except Exception as e:
                     db.rollback()
-            db.close()
-        except Exception as e:
+        except Exception:
+            # Blad na poziomie cyklu (np. chwilowa utrata polaczenia) — sesja zamknieta w finally
             pass
-        
+        finally:
+            db.close()
+
         await asyncio.sleep(interval)
 
 # ============================================
@@ -349,7 +370,7 @@ async def score_batch_endpoint(request: ScoreBatchRequest, db: Session = Depends
             
             try:
                 score = score_sample_quality(new_sample, hist_samples)
-                reason = f"Centroid klasy (Hurtowo): {score:.2f}"
+                reason = f"Zgodność etykiet k-NN (hurtowo): {score:.2f}"
             except Exception as e:
                 score = min(0.99, len(db_sample.text) / 250.0 + 0.15)
                 reason = f"Heurystyka awaryjna: {score:.2f}"
@@ -404,7 +425,7 @@ async def get_curation_status(categorizer_id: str, db: Session = Depends(get_db)
         return CurationStatusResponse(
             categorizer_id=categorizer_id,
             unscored_count=unscored_count,
-            needs_curation=(unscored_count >= 50),
+            needs_curation=(unscored_count >= config.get('quality.curation.trigger_threshold', 50)),
             total_active_samples=total_active,
             avg_quality_score=avg_quality
         )
@@ -427,3 +448,113 @@ async def run_curation_endpoint(request: RunCurationRequest, db: Session = Depen
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _farthest_point_sample(Mn, members: List[int], cap: int) -> List[int]:
+    """Wybiera 'cap' indeksow maksymalnie roznorodnych (greedy farthest-point) — zachowuje pokrycie podtematow."""
+    import numpy as np
+    members = list(members)
+    if len(members) <= cap:
+        return members
+    sub = Mn[members]                         # (m, D) znormalizowane
+    selected_local = [0]                      # start od pierwszego
+    sims_to_sel = sub @ sub[0]                # max cosine do zbioru wybranych
+    while len(selected_local) < cap:
+        nxt = int(np.argmin(sims_to_sel))     # najdalszy od dotychczas wybranych
+        selected_local.append(nxt)
+        sims_to_sel = np.maximum(sims_to_sel, sub @ sub[nxt])
+    return [members[i] for i in selected_local]
+
+
+@app.post("/curate_pool")
+async def curate_pool_endpoint(request: CuratePoolRequest):
+    """
+    Drugi etap petli samodoskonalenia: bierze pule kandydatow (np. over-wygenerowanych przez LLM),
+    ocenia jakosc metryka k-NN label-agreement, usuwa near-duplikaty i bledny/dwuznaczny ogon,
+    a ZACHOWUJE roznorodnosc (cap przez farthest-point sampling). Czysta funkcja pula -> pula,
+    nie dotyka bazy. Zwraca wykurowany zbior gotowy do /train.
+    """
+    import numpy as np
+
+    items = [(d.get("text", "").strip(), str(d.get("category", "")).strip())
+             for d in request.training_data]
+    items = [(t, c) for t, c in items if t and c]
+    n = len(items)
+    if n == 0:
+        return {"status": "empty", "input_count": 0, "kept_count": 0, "curated": []}
+
+    texts = [t for t, _ in items]
+    cats = np.array([c for _, c in items])
+
+    embs = await get_remote_embeddings_batch(texts)
+    M = np.asarray(embs, dtype=np.float64)
+    norms = np.linalg.norm(M, axis=1)
+    Mn = M / np.where(norms == 0, 1.0, norms)[:, None]
+    S = Mn @ Mn.T
+    np.fill_diagonal(S, -2.0)                  # wyklucz samego siebie
+
+    # 1) jakosc k-NN (sasiedzi cross-category)
+    quality = np.zeros(n)
+    kk = min(request.k, n - 1) if n > 1 else 0
+    for i in range(n):
+        if norms[i] == 0:
+            quality[i] = min(0.99, len(texts[i]) / 250.0 + 0.15)
+            continue
+        if kk <= 0:
+            quality[i] = 1.0
+            continue
+        idx = np.argpartition(-S[i], kk - 1)[:kk]
+        w = np.clip(S[i][idx], 0.0, None)
+        tot = float(w.sum())
+        quality[i] = float(w[cats[idx] == cats[i]].sum() / tot) if tot > 0 else 0.0
+
+    keep = np.ones(n, dtype=bool)
+
+    # 2) dedup near-duplikatow (od najwyzszej jakosci; gorszy duplikat wypada)
+    dropped_dup = 0
+    for a in np.argsort(-quality):
+        if not keep[a]:
+            continue
+        for b in np.where((S[a] > request.dup_threshold) & keep)[0]:
+            if b != a and keep[b]:
+                keep[b] = False
+                dropped_dup += 1
+
+    # 3) odsiej ogon o niskiej zgodnosci
+    low = (quality < request.min_quality) & keep
+    dropped_lowq = int(low.sum())
+    keep &= ~low
+
+    # 4) cap z zachowaniem roznorodnosci (farthest-point sampling per kategoria)
+    capped = 0
+    if request.cap_per_category:
+        for cat in set(cats[keep].tolist()):
+            members = [i for i in range(n) if keep[i] and cats[i] == cat]
+            if len(members) <= request.cap_per_category:
+                continue
+            selected = set(_farthest_point_sample(Mn, members, request.cap_per_category))
+            for i in members:
+                if i not in selected:
+                    keep[i] = False
+                    capped += 1
+
+    curated = [{"text": texts[i], "category": str(cats[i])} for i in range(n) if keep[i]]
+    per_cat: Dict[str, Dict[str, int]] = {}
+    for i in range(n):
+        c = str(cats[i])
+        per_cat.setdefault(c, {"in": 0, "kept": 0})
+        per_cat[c]["in"] += 1
+        if keep[i]:
+            per_cat[c]["kept"] += 1
+
+    return {
+        "status": "curated",
+        "input_count": n,
+        "kept_count": len(curated),
+        "dropped_low_quality": dropped_lowq,
+        "dropped_duplicates": dropped_dup,
+        "capped": capped,
+        "avg_quality_kept": float(np.mean(quality[keep])) if keep.any() else 0.0,
+        "per_category": per_cat,
+        "curated": curated,
+    }

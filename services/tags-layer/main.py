@@ -126,6 +126,24 @@ async def train(request: TrainRequest):
             top_keywords = [word for word, score in word_scores[:request.max_keywords]]
             keywords_by_category[category] = top_keywords
 
+        # Inverse-Category-Frequency: usun neutralne slowa bedace top-keywordem w zbyt wielu
+        # kategoriach (np. "aplikacja", "system", "prosze"). Takie slowa nie rozrozniaja kategorii,
+        # a powodowaly falszywe trafienia (pozytywny feedback -> Blad Techniczny).
+        num_cat = len(unique_categories)
+        if num_cat >= 2:
+            kw_doc_freq = {}
+            for kws in keywords_by_category.values():
+                for kw in set(kws):
+                    kw_doc_freq[kw] = kw_doc_freq.get(kw, 0) + 1
+            icf_cutoff = max(2, (num_cat + 1) // 2)  # slowo w >= polowie kategorii = neutralne
+            neutral = {kw for kw, c in kw_doc_freq.items() if c >= icf_cutoff}
+            if neutral:
+                logger.info(f"ICF: pomijam {len(neutral)} neutralnych slow: {sorted(neutral)[:15]}")
+                keywords_by_category = {
+                    cat: [kw for kw in kws if kw not in neutral]
+                    for cat, kws in keywords_by_category.items()
+                }
+
         categorizer_keywords[request.categorizer_id] = keywords_by_category
         
         return {
@@ -202,11 +220,19 @@ async def restore_categorizer(request: dict):
     categorizer_id = request.get("categorizer_id")
     keywords = request.get("keywords", {})
     categories = request.get("categories", [])
-    
+    config_data = request.get("config") or {}
+
     if not categorizer_id:
         raise HTTPException(status_code=400, detail="categorizer_id required")
-    
+
     categorizer_keywords[categorizer_id] = keywords
+    # Odtwarzamy konfiguracje jawnie, zeby /classify po restarcie dzialal tak samo jak po /train.
+    # Jesli warstwa persystencji nie przeslala configu, uzywamy domyslnych (zgodnych z TrainRequest).
+    categorizer_configs[categorizer_id] = {
+        "normalize_text": config_data.get("normalize_text", True),
+        "use_polish_stopwords": config_data.get("use_polish_stopwords", True),
+        "max_keywords": config_data.get("max_keywords", 12),
+    }
     return {"status": "restored", "categorizer_id": categorizer_id}
 
 if __name__ == "__main__":

@@ -20,6 +20,22 @@ secrets/
 *.sql
 backup*.sql
 
+# Generated source/context inventory dumps (do NOT commit)
+repo_context.txt
+ucas_dump.txt
+*_dump.txt
+*_context.txt
+
+# Editor / migration backup files
+*.bak
+*.backup
+*.backup_*
+
+# Scratch wyjscia generatora danych (surowa pula przed kuracja)
+_gen_pool.json
+pool.json
+curated.json
+
 # Runtime data
 volumes/postgres/*
 volumes/redis/dump.rdb

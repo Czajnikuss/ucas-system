@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Column, String, DateTime, Float, Boolean, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import sessionmaker, relationship
+from pgvector.sqlalchemy import Vector
 import uuid
 from datetime import datetime
 import os
@@ -37,7 +38,11 @@ class TrainingSample(Base):
     categorizer_id = Column(UUID(as_uuid=True), ForeignKey("categorizers.id"), nullable=False)
     text = Column(Text, nullable=False)
     category = Column(String(100), nullable=False)
-    
+
+    # Wektor osadzenia (pgvector) — uzywany przez RAG i ocene jakosci.
+    # MUSI byc zmapowany jako kolumna, inaczej przypisanie sample.embedding nie zapisze sie do bazy.
+    embedding = Column(Vector(384))
+
     # Quality Scoring Fields
     quality_score = Column(Float, default=None)
     quality_scored_at = Column(DateTime, default=None)
